@@ -9,7 +9,7 @@ BINDIR   := tools/bin
 
 all: $(BINDIR)/fsr4mac $(BINDIR)/gen_testcase $(BINDIR)/compare $(BINDIR)/bilin $(BINDIR)/bin2png
 
-test: test-input test-settings test-fsr411-math
+test: test-input test-settings test-fsr411-math test-installer
 	mkdir -p build/tests
 	$(CXX) $(CXXFLAGS) tests/backend_policy_test.cpp -o build/tests/backend_policy_test
 	build/tests/backend_policy_test
@@ -203,6 +203,20 @@ clean:
 	rm -f $(BINDIR)/fsr4mac $(BINDIR)/gen_testcase $(BINDIR)/compare $(BINDIR)/bilin $(BINDIR)/bin2png
 	rm -f build/obj/fsr411_cli.o
 
+# Installer app (tools/installer): SwiftUI front end for crossover_fsr4.py.
+INSTALLER_CORE := $(filter-out %/App.swift %/ContentView.swift,$(wildcard tools/installer/Sources/*.swift))
+INSTALLER_VERSION ?= dev
+
+installer:
+	python3 tools/installer/build_app.py $(INSTALLER_VERSION) --dmg
+
+test-installer:
+	mkdir -p build/tests
+	xcrun swiftc -swift-version 6 -target arm64-apple-macos$(FSR4_MIN_MACOS) $(INSTALLER_CORE) tests/installer/main.swift -o build/tests/installer_test
+	build/tests/installer_test
+	python3 tests/installer/check_strings.py
+
+.PHONY: installer test-installer
 .PHONY: all clean test test-gpu test-input test-settings test-fsr411-math build-fsr411-tests test-fsr411-gpu test-fsr411-native test-fsr411-runtime test-fsr411-scalar test-fsr411-lossy test-fsr411-autoexposure test-fsr411-cadence test-fsr411-live test-fsr411-cli
 
 # Run the signed-chroma regression before the remaining sequential GPU suites.
