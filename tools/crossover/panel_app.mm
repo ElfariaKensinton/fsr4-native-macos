@@ -55,23 +55,14 @@ static int profile_from_name(const std::string &name, int fallback) {
 static const char *profile_label(int profile) {
     return profile == 1 ? "lossy" : profile == 2 ? "exact-fast" : profile == 3 ? "fsr4" : "exact";
 }
-// Panel modes: FSR 4 (4.0.2 model), FSR 4.1 (Exact Fast), FSR 4.1 Lite
-// (Lossy). Exact stays available through FSR4_PROFILE/panel.conf and then
-// shows no selected segment. FSR 4 is offered only when the 4.0.2 weights are
-// present (the 4.1-only release omits them).
-static bool g_has402 = true;
-static bool has_fsr402() {
-    struct stat st = {};
-    return stat((g_root + "/third_party/fsr4/internal/shaders/fsr4_model_v07_i8_quality/initializers.bin").c_str(), &st) == 0;
-}
+// Panel modes: FSR 4.1 (Exact Fast) and FSR 4.1 Lite (Lossy). Exact and the
+// old FSR 4.0.2 model ("fsr4") stay available through FSR4_PROFILE or
+// panel.conf and then show no selected segment.
 static int segment_profile(NSInteger segment) {
-    static const int all[] = {3, 2, 1}, only411[] = {2, 1};
-    return g_has402 ? all[segment] : only411[segment];
+    return segment == 0 ? 2 : 1;
 }
 static NSInteger segment_for_profile(int profile) {
-    if (profile == 2) return g_has402 ? 1 : 0;
-    if (profile == 1) return g_has402 ? 2 : 1;
-    return profile == 3 && g_has402 ? 0 : -1;
+    return profile == 2 ? 0 : profile == 1 ? 1 : -1;
 }
 
 static Status read_status() {
@@ -184,15 +175,12 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     float sharp; bool rc; int profile;
     read_settings(sharp, rc, profile);
     [v addSubview:label(@"Mode", 12, y, 50, NO)];
-    g_has402 = has_fsr402();
-    NSArray *modes = g_has402 ? @[@"FSR 4", @"FSR 4.1", @"FSR 4.1 Lite"] : @[@"FSR 4.1", @"FSR 4.1 Lite"];
-    self.profile = [NSSegmentedControl segmentedControlWithLabels:modes
+    self.profile = [NSSegmentedControl segmentedControlWithLabels:@[@"FSR 4.1", @"FSR 4.1 Lite"]
         trackingMode:NSSegmentSwitchTrackingSelectOne target:self action:@selector(changed:)];
     self.profile.frame = NSMakeRect(62, y - 4, W - 74, 26);
     self.profile.selectedSegment = segment_for_profile(profile);
-    self.profile.toolTip = [NSString stringWithFormat:@"%@FSR 4.1: the 4.1.1 network with fast PRE/POST math. "
-                           @"FSR 4.1 Lite: reuses inference on eligible frames, fastest. Switching resets history.",
-                           g_has402 ? @"FSR 4: the previous 4.0.2 model. " : @""];
+    self.profile.toolTip = @"FSR 4.1: the 4.1.1 network with fast PRE/POST math. "
+                           @"FSR 4.1 Lite: reuses inference on eligible frames, fastest. Switching resets history.";
     self.profile.accessibilityLabel = @"FSR mode";
     [v addSubview:self.profile]; y -= 34;
     [v addSubview:label(@"Sharpness", 12, y, 70, NO)];
@@ -312,8 +300,8 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     self.profile.enabled = !pinned;
     self.profileHint.stringValue = self.settingsError ?: (pinned
         ? @"The bottle pins FSR 4.0.2 (FSR4_VERSION); modes need 4.1.1."
-        : profile == 3 ? @"FSR 4: previous model (4.0.2)."
-        : profile == 2 ? @"FSR 4.1: newer model, about as fast as FSR 4."
+        : profile == 3 ? @"FSR 4 (4.0.2 model), set by FSR4_PROFILE."
+        : profile == 2 ? @"FSR 4.1: full network every frame, best quality."
         : profile == 1 ? @"FSR 4.1 Lite: fastest, skips the network on some frames."
         : @"FSR 4.1 Exact (bit-exact reference), set by FSR4_PROFILE.");
     self.sharpVal.stringValue = [NSString stringWithFormat:@"%.2f", s];
