@@ -51,7 +51,6 @@ The **FSR 4** panel lets you switch modes on the fly:
 | --- | --- | ---: |
 | FSR 4.1 Lite | Fastest, tiny quality trade-offs (default) | ~3.0 ms |
 | FSR 4.1 | Full quality, fast math | ~4.3 ms |
-| FSR 4 | Older 4.0.2 model, for comparison | ~4.5 ms |
 
 \* 864×560 → 1712×1112 per frame.
 

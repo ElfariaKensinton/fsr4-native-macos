@@ -44,7 +44,7 @@ PANEL_KEY = "FSR4_PANEL"
 VERSION_KEY = "FSR4_VERSION"
 PROFILE_KEY = "FSR4_PROFILE"
 METALFX_KEY = "D3DM_ENABLE_METALFX"
-# "fsr4" is the panel's fourth mode: the FSR 4.0.2 model under a 4.1.1 install.
+# "fsr4": the FSR 4.0.2 model under a 4.1.1 install (FSR4_PROFILE only, not in the panel).
 PROFILES = ("exact", "exact-fast", "lossy", "fsr4")
 OURS = (KEY, LOG_KEY, ROOT_KEY, REPLACE_KEY, PANEL_KEY, VERSION_KEY, PROFILE_KEY)
 
