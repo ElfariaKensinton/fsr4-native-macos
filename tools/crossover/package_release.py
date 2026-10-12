@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 EXCLUDE_PREFIXES = (
     "third_party/fsr4/internal/shaders/fsr4_model_v07_i8_",  # FSR 4.0.2 weights
-    "tests/", "tools/bench/", "tools/fsr411/test_", "docs/benchmarks/",
+    "tests/", "tools/bench/", "tools/installer/", "tools/fsr411/test_", "docs/benchmarks/",
     "docs/FSR402_", "docs/GUIDE_FSR402", "docs/HARDWARE_FSR402", "patches/",
     "build_shaders.sh", "TESTDATA.md", "VERIFICATION.md", ".gitignore",
 )

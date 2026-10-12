@@ -1,0 +1,108 @@
+/* FSR4 Installer: Russian. Keys are the English strings in Sources/*.swift;
+   tests/installer/check_strings.py checks that every key is translated. */
+
+/* Window and header */
+"FSR 4 for CrossOver" = "FSR 4 для CrossOver";
+"AMD FSR 4.1 instead of DLSS in Windows games" = "AMD FSR 4.1 вместо DLSS в Windows-играх";
+"native INT8 on the neural accelerators" = "нативный INT8 на нейроускорителях";
+"half-matrix INT8 backend" = "INT8 через half-матрицы";
+"FSR 4 Guide" = "Инструкция FSR 4";
+"Guide" = "Инструкция";
+
+/* Requirements */
+"Requirements" = "Что нужно";
+"Check Again" = "Проверить снова";
+"Checking this Mac…" = "Проверяю Mac…";
+"Ready" = "Готово";
+"Needs attention" = "Требует внимания";
+"Xcode %lld+" = "Xcode %lld+";
+"Needed to build the hook and FSR shaders. Free in the App Store." = "Нужен для сборки хука и шейдеров FSR. Бесплатно в App Store.";
+"Installed Xcode is too old. Update it in the App Store." = "Установленный Xcode слишком старый. Обновите его в App Store.";
+"%@ is installed but not set up for command-line tools." = "%@ установлен, но не выбран для инструментов командной строки.";
+"Accept the Xcode license and finish its first-launch setup." = "Примите лицензию Xcode и завершите его первую настройку.";
+"Open App Store" = "Открыть App Store";
+"Set Up…" = "Настроить…";
+"Metal Toolchain" = "Metal Toolchain";
+"Set up Xcode first." = "Сначала настройте Xcode.";
+"Xcode component that compiles FSR shaders for each game." = "Компонент Xcode, который компилирует шейдеры FSR под каждую игру.";
+"Download" = "Скачать";
+"Rosetta 2" = "Rosetta 2";
+"Installed" = "Установлена";
+"CrossOver runs Windows games as Intel code." = "CrossOver запускает Windows-игры как код для Intel.";
+"Install" = "Установить";
+"CrossOver 24+" = "CrossOver 24+";
+"Runs the Windows game. Install it to /Applications." = "Запускает Windows-игру. Установите его в /Applications.";
+"This CrossOver has no D3DMetal. Update to version 24 or newer." = "В этом CrossOver нет D3DMetal. Обновите до версии 24 или новее.";
+
+/* Bottles */
+"CrossOver bottle" = "Бутылка CrossOver";
+"Bottle" = "Бутылка";
+"No bottles yet. Create one in CrossOver, install the game there, then come back." = "Бутылок пока нет. Создайте бутылку в CrossOver, установите туда игру и вернитесь.";
+"FSR 4 not installed" = "FSR 4 не установлен";
+"Installed · FSR 4.1 Lite" = "Установлен · FSR 4.1 Lite";
+"Installed · FSR 4.1" = "Установлен · FSR 4.1";
+"Installed · FSR 4.1 (bit-exact)" = "Установлен · FSR 4.1 (битово-точный)";
+"Installed · FSR 4" = "Установлен · FSR 4";
+"Installed from another folder (%@). Reinstall to switch to this app." = "Установлен из другой папки (%@). Переустановите, чтобы перейти на это приложение.";
+
+/* Options and actions */
+"Starting mode" = "Режим при запуске";
+"FSR 4.1 Lite" = "FSR 4.1 Lite";
+"FSR 4.1" = "FSR 4.1";
+"Fastest. Reuses network output on suitable frames, about 30% less GPU time." = "Самый быстрый. На подходящих кадрах переиспользует результат сети, примерно на 30% меньше нагрузка на GPU.";
+"Full network every frame, best quality." = "Полная сеть на каждом кадре, лучшее качество.";
+"Show the FSR 4 panel next to the game" = "Показывать панель FSR 4 рядом с игрой";
+"Switch modes and sharpness while playing, no restart needed." = "Режим и резкость меняются прямо в игре, без перезапуска.";
+"Install in “%@”" = "Установить в «%@»";
+"Reinstall in “%@”" = "Переустановить в «%@»";
+"Remove…" = "Удалить…";
+"Remove" = "Удалить";
+"Cancel" = "Отменить";
+"Fix the requirements above first." = "Сначала исправьте пункты выше.";
+"Pick a bottle." = "Выберите бутылку.";
+"This build has no FSR files. Build it with tools/installer/build_app.py." = "В этой сборке нет файлов FSR. Соберите её через tools/installer/build_app.py.";
+
+/* Alerts */
+"A CrossOver bottle is running" = "Бутылка CrossOver запущена";
+"Install Anyway" = "Всё равно установить";
+"Quit the game and close its bottle first: a bottle reads its settings only when it starts." = "Сначала закройте игру и её бутылку: бутылка читает настройки только при запуске.";
+"Remove FSR 4 from “%@”?" = "Удалить FSR 4 из «%@»?";
+"The bottle goes back to CrossOver's own D3DMetal. Games and saves are not touched." = "Бутылка вернётся к собственному D3DMetal из CrossOver. Игры и сохранения не затрагиваются.";
+
+/* Progress */
+"Installing into “%@”" = "Установка в «%@»";
+"Removing from “%@”" = "Удаление из «%@»";
+"Unpacking FSR files…" = "Распаковка файлов FSR…";
+"Building the hook…" = "Сборка хука…";
+"Patching a copy of D3DMetal…" = "Патч копии D3DMetal…";
+"Testing the hook…" = "Проверка хука…";
+"Preparing the FSR tool…" = "Подготовка FSR…";
+"Compiling FSR shaders (a few minutes the first time)…" = "Компиляция шейдеров FSR (в первый раз несколько минут)…";
+"Checking the result against the reference…" = "Сверка результата с эталоном…";
+"Building the FSR 4 panel…" = "Сборка панели FSR 4…";
+"Waiting for your password…" = "Ожидание пароля…";
+"Downloading…" = "Загрузка…";
+"Cancelling…" = "Отмена…";
+
+/* Results */
+"FSR 4 is installed in “%@”" = "FSR 4 установлен в «%@»";
+"Start the game in CrossOver and select DLSS in its graphics settings. The first launch compiles shaders for the game's resolution, which can take a minute." = "Запустите игру в CrossOver и выберите DLSS в настройках графики. При первом запуске компилируются шейдеры под разрешение игры, это может занять около минуты.";
+"FSR 4 is removed from “%@”" = "FSR 4 удалён из «%@»";
+"The bottle uses CrossOver's own D3DMetal again from its next launch." = "Со следующего запуска бутылка снова использует D3DMetal из CrossOver.";
+"Installation failed" = "Установка не удалась";
+"Removal failed" = "Удаление не удалось";
+"%@: setup failed" = "%@: настройка не удалась";
+"%@: download failed" = "%@: загрузка не удалась";
+"Cancelled" = "Отменено";
+"Nothing was changed in the bottle." = "В бутылке ничего не изменено.";
+"See the log for details." = "Подробности в логе.";
+"Could not unpack the FSR files: %@" = "Не удалось распаковать файлы FSR: %@";
+
+/* Log and footer */
+"Log" = "Лог";
+"Nothing yet." = "Пока пусто.";
+"Copy Log" = "Скопировать лог";
+"Open FSR 4 Panel" = "Открыть панель FSR 4";
+"Game Log" = "Лог игры";
+"Show Files" = "Показать файлы";
+"Dismiss" = "Закрыть";

@@ -11,8 +11,30 @@ Works as a standalone tool and inside games via CrossOver (DLSS → FSR 4).
 
 - Mac with Apple Silicon (fastest on M5; M1–M4 use the `simd` half-matrix backend, not benchmarked on those chips yet, see [hardware](docs/HARDWARE.md))
 - macOS 26+, Xcode 26+ with Metal Toolchain, Python 3
+- For games: CrossOver 24+ and Rosetta 2
 
-## Quick start: play a game in CrossOver
+## Easiest: the FSR4 Installer app
+
+1. Download **FSR4-Installer-v1.3.dmg** from the
+   [latest release](https://github.com/UzenUPoZiTiV4ik/fsr4-native-macos/releases/latest)
+   and drag **FSR4 Installer** to Applications.
+2. First launch: the app is not notarized, so macOS blocks it. Open
+   **System Settings → Privacy & Security** and press **Open Anyway**
+   (or run `xattr -dr com.apple.quarantine "/Applications/FSR4 Installer.app"`).
+3. The app checks Xcode, the Metal Toolchain, Rosetta and CrossOver, and
+   offers a button for anything missing.
+4. Quit the game and its bottle, pick the bottle, choose a mode and press
+   **Install**. It takes about a minute. Then start the game and turn on **DLSS**.
+
+![FSR4 Installer](docs/images/installer.png)
+
+The app keeps its files in `~/Library/Application Support/fsr4-native-macos`
+and never modifies CrossOver.app. **Remove…** puts the bottle back on
+CrossOver's own D3DMetal. Step-by-step guide:
+[docs/GUIDE.md](docs/GUIDE.md) (Russian),
+[tools/crossover/INSTALL.md](tools/crossover/INSTALL.md) (English).
+
+## Quick start from source: play a game in CrossOver
 
 ```sh
 xcodebuild -downloadComponent MetalToolchain
@@ -55,10 +77,13 @@ Profiles: `lossy` (default), `exact-fast`, `exact` (bit-exact reference).
 ## Tests
 
 ```sh
-make test
+make test                 # includes the installer app tests
 make build-fsr411-tests
 make test-fsr411-gpu
 ```
+
+Build the installer app and DMG: `make installer INSTALLER_VERSION=v1.3`
+(or `python3 tools/installer/build_app.py v1.3 --dmg`).
 
 ## Documentation
 

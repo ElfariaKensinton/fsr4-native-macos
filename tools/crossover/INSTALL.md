@@ -5,6 +5,16 @@ Replaces DLSS in Windows games running under CrossOver with AMD FSR 4.1
 the MetalFX upscaler that D3DMetal uses for DLSS. Русская инструкция:
 [docs/GUIDE.md](docs/GUIDE.md).
 
+**Easier:** the FSR4 Installer app (`FSR4-Installer-<version>.dmg` on the
+[releases page](https://github.com/UzenUPoZiTiV4ik/fsr4-native-macos/releases/latest))
+does everything below with buttons: checks Xcode, the Metal Toolchain,
+Rosetta and CrossOver, lists the bottles, installs and removes. It is not
+notarized: on first launch open **System Settings → Privacy & Security →
+Open Anyway**, or run
+`xattr -dr com.apple.quarantine "/Applications/FSR4 Installer.app"`.
+The app keeps its copy in `~/Library/Application Support/fsr4-native-macos`.
+This zip is the same thing for Terminal users.
+
 ## Requirements
 
 - Apple Silicon Mac, macOS 26 or newer. Tested on M5; M1–M4 use a
@@ -12,6 +22,7 @@ the MetalFX upscaler that D3DMetal uses for DLSS. Русская инструк�
   those chips yet.
 - CrossOver 24+ (CrossOver.app or CrossOver Preview.app in /Applications)
   with a bottle where the game runs with D3DMetal and DLSS enabled.
+- Rosetta 2 (`softwareupdate --install-rosetta`).
 - Xcode 26+ with the Metal Toolchain, and Python 3 (ships with Xcode).
 
 ```sh
