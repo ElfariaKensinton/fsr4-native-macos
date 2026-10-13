@@ -83,6 +83,14 @@ retirement tokens. Resources survive owner release and queued resizing.
 
 ## Optimizations and numeric contract
 
+- `simd` 3×3 convolutions with 16/32 channels use exact integer Winograd
+  F(2×2,3×3) (`Conv3x3<true>` in `src/fsr411_simd.metal`, weights from
+  `winograd()` in `tools/gen_fsr411_native.py`, manifest `simd.winograd`).
+  Output is byte-identical to the direct kernels. All simd loops use
+  `#pragma clang loop unroll(full)`: with plain `#pragma unroll` the backend
+  left the Winograd loops rolled and ran 8× slower; full unrolling also sped
+  up the direct kernels. M5 simd frames are 23–32% faster (`docs/HARDWARE.md`).
+
 - Native requantization operates on four int32 values together, retaining
   unsigned wrap, signed shifts, ties-to-even/half-up, int16 narrowing before
   int8 clamping, and residual arithmetic. Three GPU probes each compare

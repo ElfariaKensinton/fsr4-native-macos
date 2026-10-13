@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Usage: fsr411_native_test <metallib> <native-dir> [--reference|--specialized|--simd|--simd-specialized]
 // Correctness only: tiny odd-sized inputs, all bytes including padding checked.
-// --simd runs the Apple7+ simdgroup kernels with the half weight copy at index 3.
+// --simd runs the Apple7+ simdgroup kernels with the half weight copy at index 3;
+// --simd-winograd(-specialized) runs their Winograd 3x3 variants where present.
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #include "../src/fsr411_model.h"
@@ -134,9 +135,11 @@ static void reference_fnb(std::vector<unsigned char> &scratch,
 int main(int argc, char **argv) {
     const char *mode = argc == 4 ? argv[3] : "";
     const bool reference = !std::strcmp(mode, "--reference");
-    const bool simd = !std::strcmp(mode, "--simd") || !std::strcmp(mode, "--simd-specialized");
-    const bool specialized = !std::strcmp(mode, "--specialized") || !std::strcmp(mode, "--simd-specialized");
-    if (argc != 3 && !reference && !specialized && !simd) { std::fprintf(stderr, "Usage: %s <metallib> <native-dir> [--reference|--specialized|--simd|--simd-specialized]\n", argv[0]); return 2; }
+    const bool winograd = !std::strcmp(mode, "--simd-winograd") || !std::strcmp(mode, "--simd-winograd-specialized");
+    const bool simd = winograd || !std::strcmp(mode, "--simd") || !std::strcmp(mode, "--simd-specialized");
+    const bool specialized = !std::strcmp(mode, "--specialized") || !std::strcmp(mode, "--simd-specialized")
+        || !std::strcmp(mode, "--simd-winograd-specialized");
+    if (argc != 3 && !reference && !specialized && !simd) { std::fprintf(stderr, "Usage: %s <metallib> <native-dir> [--reference|--specialized|--simd|--simd-specialized|--simd-winograd[-specialized]]\n", argv[0]); return 2; }
     @autoreleasepool {
         id<MTLDevice> device = MTLCreateSystemDefaultDevice();
         if (!device || (!reference && !simd && ![device supportsFamily:MTLGPUFamilyApple10])
@@ -156,6 +159,16 @@ int main(int argc, char **argv) {
         id<MTLBuffer> weights = [device newBufferWithBytes:weight_bytes.data() length:weight_bytes.size() options:MTLResourceStorageModeShared];
         std::vector<__fp16> half_bytes(weight_bytes.size());
         for (size_t i = 0; i < weight_bytes.size(); ++i) half_bytes[i] = __fp16(signed_byte(weight_bytes[i]));
+        // Winograd regions: int16 values widened at their starting index.
+        NSMutableArray *all = [[manifest[@"passes"] allValues] mutableCopy];
+        if (manifest[@"auxiliary_passes"][@"post_cnb"]) [all addObject:manifest[@"auxiliary_passes"][@"post_cnb"]];
+        for (NSDictionary *entry in all) {
+            NSDictionary *w = entry[@"simd"][@"winograd"]; if (!w) continue;
+            const size_t at = [w[@"weights0"] unsignedLongLongValue], count = [w[@"weights0_count"] unsignedLongLongValue];
+            for (size_t i = 0; i < count; ++i) {
+                int16_t v; std::memcpy(&v, weight_bytes.data() + at + 2 * i, 2); half_bytes[at + i] = __fp16(v);
+            }
+        }
         id<MTLBuffer> half_weights = [device newBufferWithBytes:half_bytes.data() length:half_bytes.size() * 2 options:MTLResourceStorageModeShared];
         id<MTLCommandQueue> queue = [device newCommandQueue];
         const unsigned cases[][3] = {{1, 1, 0}, {3, 5, 3}, {33, 7, 128}, {65, 5, 128}};
@@ -164,15 +177,19 @@ int main(int argc, char **argv) {
             NSDictionary *entry = [pass isEqual:@"post_cnb"] ? manifest[@"auxiliary_passes"][pass] : manifest[@"passes"][pass];
             if (!entry) continue;
             NSDictionary *schedule = reference ? entry[@"reference"] : simd ? entry[@"simd"] : entry;
+            if (winograd) { schedule = schedule[@"winograd"]; if (!schedule) continue; }
             if (!schedule) { std::fprintf(stderr, "pass %s: manifest has no schedule for %s\n", pass.UTF8String, mode); return 1; }
             const unsigned offset = [entry[@"parameter_offset"] unsignedIntValue];
             fsr411::PassParams original;
             std::memcpy(&original, parameter_bytes.data() + offset, sizeof(original));
+            // The GPU reads transformed weights; the CPU reference keeps the INT8 ones.
+            fsr411::PassParams gpuOriginal = original;
+            if (winograd) gpuOriginal.weights[0] = [schedule[@"weights0"] unsignedIntValue];
             id<MTLFunction> function = nil;
             if (specialized) {
                 // Build once from the unmodified manifest parameters. Every
                 // case changes dimensions and POST's appended output offset.
-                const auto metadata = fsr411::specialize_metadata(original,
+                const auto metadata = fsr411::specialize_metadata(gpuOriginal,
                     [entry[@"output_offset_base"] isEqual:@"scratch_append"]);
                 MTLFunctionConstantValues *values = [MTLFunctionConstantValues new];
                 [values setConstantValues:metadata.values type:MTLDataTypeUInt4
@@ -225,7 +242,9 @@ int main(int argc, char **argv) {
                 [encoder setBuffer:scratch offset:0 atIndex:0];
                 [encoder setBuffer:weights offset:0 atIndex:1];
                 if (simd) [encoder setBuffer:half_weights offset:0 atIndex:3];
-                [encoder setBytes:&p length:sizeof(p) atIndex:2];
+                fsr411::PassParams gpu = p;
+                gpu.weights[0] = gpuOriginal.weights[0];
+                [encoder setBytes:&gpu length:sizeof(gpu) atIndex:2];
                 const unsigned tw = [schedule[@"tile"][0] unsignedIntValue], th = [schedule[@"tile"][1] unsignedIntValue];
                 const unsigned gridw = ct ? p.input.width : p.output.width, gridh = ct ? p.input.height : p.output.height;
                 [encoder dispatchThreadgroups:MTLSizeMake((gridw + tw - 1) / tw, (gridh + th - 1) / th, 1)

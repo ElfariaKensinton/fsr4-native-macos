@@ -439,6 +439,8 @@ private:
     // Simd probe result per Runtime (one device): -1 unknown, 0 failed, 1 ok.
     int simdVerified_ = -1;
     bool simdFailed_ = false;
+    // Winograd-range probe passed and FSR411_SIMD_WINOGRAD is not 0.
+    bool winogradOk_ = false;
 
     bool native_capable() const {
         if (@available(macOS 26.0,*)) return [device_ supportsFamily:static_cast<MTLGPUFamily>(1010)]
@@ -447,7 +449,9 @@ private:
     }
     bool simd_family() const { return [device_ supportsFamily:MTLGPUFamilyApple7]; }
     // Confirms the lane ownership the simd epilogue relies on and that half
-    // products of INT8 extremes accumulate exactly in float on this GPU.
+    // products accumulate exactly in float on this GPU: INT8 extremes for the
+    // direct kernels, then Winograd-range operands (|a| <= 512, |b| <= 2048,
+    // sums near 2^24) for the transformed convolutions.
     bool verify_simd(id<MTLLibrary> lib, std::string &error) {
         if (simdVerified_ >= 0) { if (!simdVerified_) error = "simdgroup probe failed on this GPU"; return simdVerified_ == 1; }
         simdVerified_ = 0;
@@ -457,31 +461,45 @@ private:
         if (!pso || pso.maxTotalThreadsPerThreadgroup < 32 || pso.threadExecutionWidth != 32) {
             error = "simdgroup probe pipeline: " + (e ? metal_error(e) : std::string("needs SIMD32")); return false;
         }
-        _Float16 a[64], b[64]; int ai[64], bi[64]; uint32_t r = 0x4117u;
-        for (int i = 0; i < 64; ++i) {
-            r = r * 1664525u + 1013904223u;
-            ai[i] = i % 3 == 0 ? -128 : i % 3 == 1 ? 127 : int(r >> 24) - 128;
-            bi[i] = i % 5 == 0 ? 127 : -128;
-            a[i] = (_Float16)ai[i]; b[i] = (_Float16)bi[i];
-        }
-        id<MTLBuffer> A = [device_ newBufferWithBytes:a length:sizeof a options:MTLResourceStorageModeShared];
-        id<MTLBuffer> B = [device_ newBufferWithBytes:b length:sizeof b options:MTLResourceStorageModeShared];
-        id<MTLBuffer> out = [device_ newBufferWithLength:96 * sizeof(int) options:MTLResourceStorageModeShared];
         id<MTLCommandQueue> queue = [device_ newCommandQueue];
-        id<MTLCommandBuffer> cb = [queue commandBuffer];
-        id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
-        [enc setComputePipelineState:pso]; [enc setBuffer:A offset:0 atIndex:0];
-        [enc setBuffer:B offset:0 atIndex:1]; [enc setBuffer:out offset:0 atIndex:2];
-        [enc dispatchThreadgroups:MTLSizeMake(1,1,1) threadsPerThreadgroup:MTLSizeMake(32,1,1)];
-        [enc endEncoding]; [cb commit]; [cb waitUntilCompleted];
-        if (cb.status != MTLCommandBufferStatusCompleted) { error = "simdgroup probe did not complete"; return false; }
-        const int *v = (const int *)out.contents;
-        for (int i = 0; i < 8; ++i) for (int j = 0; j < 8; ++j) {
-            int s = 0; for (int k = 0; k < 8; ++k) s += ai[i*8+k] * bi[k*8+j];
-            if (v[i*8+j] != 2 * s) { error = "simdgroup half products do not accumulate exactly in float"; return false; }
-        }
-        for (int lane = 0; lane < 32; ++lane)
-            if (v[64+lane] != 1) { error = "simdgroup element layout differs from the verified Apple7+ layout"; return false; }
+        auto probe = [&](bool wide, std::string &why) {
+            _Float16 a[64], b[64]; int ai[64], bi[64]; uint32_t r = wide ? 0x5eedu : 0x4117u;
+            for (int i = 0; i < 64; ++i) {
+                r = r * 1664525u + 1013904223u;
+                if (wide) {
+                    // 2 * 8 * 511 * 2047 < 2^24 plus odd low terms in column 7.
+                    ai[i] = i % 8 == 7 ? int(r >> 29) - 4 : (i % 2 ? -511 : 511);
+                    bi[i] = i % 8 == 7 ? int(r >> 28) - 8 : (i / 8 % 2 ? -2047 : 2047);
+                } else {
+                    ai[i] = i % 3 == 0 ? -128 : i % 3 == 1 ? 127 : int(r >> 24) - 128;
+                    bi[i] = i % 5 == 0 ? 127 : -128;
+                }
+                a[i] = (_Float16)ai[i]; b[i] = (_Float16)bi[i];
+            }
+            id<MTLBuffer> A = [device_ newBufferWithBytes:a length:sizeof a options:MTLResourceStorageModeShared];
+            id<MTLBuffer> B = [device_ newBufferWithBytes:b length:sizeof b options:MTLResourceStorageModeShared];
+            id<MTLBuffer> out = [device_ newBufferWithLength:96 * sizeof(int) options:MTLResourceStorageModeShared];
+            id<MTLCommandBuffer> cb = [queue commandBuffer];
+            id<MTLComputeCommandEncoder> enc = [cb computeCommandEncoder];
+            [enc setComputePipelineState:pso]; [enc setBuffer:A offset:0 atIndex:0];
+            [enc setBuffer:B offset:0 atIndex:1]; [enc setBuffer:out offset:0 atIndex:2];
+            [enc dispatchThreadgroups:MTLSizeMake(1,1,1) threadsPerThreadgroup:MTLSizeMake(32,1,1)];
+            [enc endEncoding]; [cb commit]; [cb waitUntilCompleted];
+            if (cb.status != MTLCommandBufferStatusCompleted) { why = "simdgroup probe did not complete"; return false; }
+            const int *v = (const int *)out.contents;
+            for (int i = 0; i < 8; ++i) for (int j = 0; j < 8; ++j) {
+                int s = 0; for (int k = 0; k < 8; ++k) s += ai[i*8+k] * bi[k*8+j];
+                if (v[i*8+j] != 2 * s) { why = "simdgroup half products do not accumulate exactly in float"; return false; }
+            }
+            for (int lane = 0; lane < 32; ++lane)
+                if (v[64+lane] != 1) { why = "simdgroup element layout differs from the verified Apple7+ layout"; return false; }
+            return true;
+        };
+        if (!probe(false, error)) return false;
+        std::string why;
+        const char *disable = getenv("FSR411_SIMD_WINOGRAD");
+        winogradOk_ = !(disable && !std::strcmp(disable, "0")) && probe(true, why);
+        if (!winogradOk_ && !why.empty()) fsr4_logf("FSR 4.1.1 simd Winograd disabled (%s); direct kernels", why.c_str());
         simdVerified_ = 1; return true;
     }
     static bool depth_format(MTLPixelFormat format) {
@@ -660,6 +678,15 @@ private:
             std::vector<_Float16> widened(weights.length);
             const int8_t *bytes=(const int8_t *)weights.bytes;
             for (size_t i=0;i<widened.size();++i) widened[i]=(_Float16)bytes[i];
+            // Winograd regions hold int16 values at the same starting index.
+            NSMutableArray *entries=[[manifest[@"passes"] allValues] mutableCopy];
+            if (manifest[@"auxiliary_passes"][@"post_cnb"]) [entries addObject:manifest[@"auxiliary_passes"][@"post_cnb"]];
+            for (NSDictionary *entry in entries) {
+                NSDictionary *w=entry[@"simd"][@"winograd"]; if (!w) continue;
+                const size_t at=[w[@"weights0"] unsignedLongLongValue], count=[w[@"weights0_count"] unsignedLongLongValue];
+                if (at+2*count>weights.length) { error="native 4.1.1 Winograd weights out of range"; return false; }
+                for (size_t i=0;i<count;++i) { int16_t v; memcpy(&v,bytes+at+2*i,2); widened[at+i]=(_Float16)v; }
+            }
             s.halfWeights=[device_ newBufferWithBytes:widened.data() length:widened.size()*sizeof(_Float16) options:MTLResourceStorageModeShared];
             if (!s.halfWeights) { error="cannot allocate simd half weights"; return false; }
         }
@@ -692,10 +719,14 @@ private:
             NSDictionary *entry=passes[key]; NativePass np;
             NSDictionary *dispatch=useMpp?entry:useSimd?entry[@"simd"]:entry[@"reference"];
             if (!dispatch) { error="native 4.1.1 manifest predates the simd kernels; regenerate this model"; return false; }
+            NSDictionary *wino=useSimd && winogradOk_ ? dispatch[@"winograd"] : nil;
+            if (wino) dispatch=wino;
             const std::string name=utf8(useMpp?entry[@"kernel"]:dispatch[@"function"]);
             np.offset=[entry[@"parameter_offset"] unsignedIntValue];
             if (np.offset+sizeof(PassParams)>params.length || kNative+np.offset+sizeof(PassParams)>8192) { error="native parameter region overflow"; return false; }
             memcpy(&np.parameters,(const uint8_t *)params.bytes+np.offset,sizeof(PassParams));
+            // Winograd reads its transformed 3x3 weights from the half copy.
+            if (wino) np.parameters.weights[0]=[wino[@"weights0"] unsignedIntValue];
             // Shared entry names have different weights, strides and epilogues
             // for each logical pass. Dimensions remain per-frame parameters.
             const std::string pipelineKey=name+(specialize?"/"+utf8(key):"");

@@ -469,6 +469,42 @@ def encode_model(source_dir, initializer_path, tier, output_dir, preset="normal"
             raise ValueError("INT8 dot products exceed the exact float range")
         return limit
 
+    def winograd(model):
+        # Integer Winograd F(2x2,3x3) for the simd backend's grouped 3x3
+        # convolution (src/fsr411_simd.metal Conv3x3<true>): w' = (2G) g (2G)^T
+        # per [bank][position 4*xi+nu][input 16][output 16] as int16. The GPU
+        # forms y = A^T (d' . w') A = 4 * conv with half operands and float
+        # sums; returns None unless that is exact for these weights. NF64
+        # keeps the direct kernel (the convolution is a small part of it).
+        kind, nf = model["kind"], model["input"][5]
+        if kind == "ds" or nf == 64:
+            return None
+        g2 = ((2, 0, 0), (1, 1, 1), (1, -1, 1), (0, 0, 2))
+        at = ((1, 1, 1, 0), (0, 1, -1, -1))
+        conv = model["weights"][0]
+        values, worst = [], 0
+        for xi in range(4):
+            for nu in range(4):
+                for ic in range(16):
+                    for oc in range(16):
+                        values.append(sum(g2[xi][ky] * g2[nu][kx] * conv[(ky * 3 + kx) * 256 + ic * 16 + oc]
+                                          for ky in range(3) for kx in range(3)))
+        # |d'| <= 4 * 128 = 512 for INT8 input; |w'| must be exact in half.
+        if max(abs(v) for v in values) > 2048:
+            return None
+        for oc in range(16):
+            # Products of one position, and the A^T-weighted running sums of y.
+            column = [512 * sum(abs(values[(p * 16 + ic) * 16 + oc]) for ic in range(16)) for p in range(16)]
+            for i in range(2):
+                for j in range(2):
+                    worst = max(worst, sum(column[xi * 4 + nu] for xi in range(4) for nu in range(4)
+                                           if at[i][xi] and at[j][nu]))
+        if worst >= 1 << 24:
+            return None
+        name = {"cnb": "fsr411_simd_wcnb", "fnb": "fsr411_simd_wfnb32", "ct": "fsr411_simd_wct32"}[kind]
+        return {"function": name, "tile": [16, 8], "threads": 128, "float_accumulator_bound": worst,
+                "weights0": append(struct.pack("<" + str(len(values)) + "h", *values)), "weights0_count": len(values)}
+
     def pack_model(model, input_slot):
         weights = [append(bytes(x & 255 for x in matrix)) for matrix in model["weights"]]
         biases = [append(struct.pack("<" + str(len(a)) + "i", *a)) for a in model["bias"]]
@@ -494,6 +530,9 @@ def encode_model(source_dir, initializer_path, tier, output_dir, preset="normal"
             "initializer_bias_offsets": model["initializer_bias_offsets"],
             "accumulator_bounds": model["accumulator_bounds"],
         }
+        transformed = winograd(model)
+        if transformed:
+            entry["simd"]["winograd"] = transformed
         if "skip" in model:
             entry["skip"] = model["skip"]
             entry["skip_slot"] = model["skip_slot"]

@@ -130,6 +130,8 @@ test-fsr411-native: build/tests/fsr411_native_test build/tests/fsr411_mpp.metall
 	    build/tests/fsr411_native_test build/tests/fsr411_reference.metallib build/tests/fsr411_native --reference; \
 	    build/tests/fsr411_native_test build/tests/fsr411_simd.metallib build/tests/fsr411_native --simd; \
 	    build/tests/fsr411_native_test build/tests/fsr411_simd_specialized.metallib build/tests/fsr411_native --simd-specialized; \
+	    build/tests/fsr411_native_test build/tests/fsr411_simd.metallib build/tests/fsr411_native --simd-winograd; \
+	    build/tests/fsr411_native_test build/tests/fsr411_simd_specialized.metallib build/tests/fsr411_native --simd-winograd-specialized; \
 	  done; \
 	done
 

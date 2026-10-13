@@ -10,6 +10,7 @@ model, including its separate Ultra Performance initializer.
 | M2 / family 8 | `simd` |
 | M3–M4 / family 9 | `simd` |
 | M5 / family 10+, macOS 26+ | Native INT8 tensor operations (`i8mpp`). |
+| M6 | `i8mpp` (INT8, not FP8; see below). |
 | Non-Apple7 GPU | Scalar INT8 Metal compute. |
 
 Selection uses Metal feature families and device limits. Rosetta does not
@@ -27,12 +28,33 @@ tests, CLI frames). Half weights are a widened copy of the INT8 blob; the
 simdgroup lane layout is probed once per device, with scalar fallback if
 it differs.
 
-Measured on Apple M5, `tc_game_balanced`, `--bench 5`, mean GPU frame:
+The 3×3 convolutions with 16 and 32 channels (CNB, FNB32, CT32) use exact
+integer Winograd F(2×2,3×3): 16 products per 2×2 output instead of 36. The
+generator stores integer `(2G) g (2G)ᵀ` weights (int16, max 390) and proves
+every Winograd accumulator stays below 2^24 (max 1,174,016), so output stays
+byte-identical. A second device probe checks exact float accumulation for
+`|a| <= 512`, `|b| <= 2048`; on failure the direct kernels are used.
+`FSR411_SIMD_WINOGRAD=0` forces the direct kernels. The 64-channel and
+downsample convolutions stay direct.
 
-| Profile | scalar | simd | i8mpp |
-| --- | ---: | ---: | ---: |
-| Lossy | 71.7 ms | 6.13 ms | 3.12 ms |
-| Exact Fast | 140.4 ms | 10.3 ms | — |
+Measured on Apple M5, low-power mode off, median of three `--bench 10` runs,
+mean GPU frame:
+
+| Profile | Case | simd before | simd with Winograd | i8mpp |
+| --- | --- | ---: | ---: | ---: |
+| Lossy | `q411` | 6.82 ms | 4.88 ms | 3.10 ms |
+| Lossy | `tc_game_balanced` | 6.42 ms | 4.98 ms | 3.27 ms |
+| Exact Fast | `q411` | 12.02 ms | 8.23 ms | 4.71 ms |
+| Exact Fast | `tc_game_balanced` | 10.86 ms | 8.13 ms | 4.72 ms |
+
+Scalar is about 72 ms (Lossy) and 140 ms (Exact Fast).
+
+M6 has hardware FP8. The FSR 4.1.1 model is INT8: E4M3 holds integers exactly
+only up to 16, so mapping INT8 weights or activations to FP8 changes the
+result of every layer, not only an invisible last bit. INT8 tensor operations
+are already native on M5/M6, and published Metal FP8 matmul measurements
+(M4 Max, emulated) are about fp16 throughput, so M6 keeps `i8mpp`. M6 is not
+tested here.
 
 Physical validation is on Apple M5 only, including classic Metal and Metal 4
 live encoding under Rosetta. M1–M4 timings are not measured; those GPUs have
