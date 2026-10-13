@@ -167,12 +167,47 @@ check(InstallerModel.describe("codesign -f -s - /x/dist/crossover/D3DMetal.frame
 check(InstallerModel.describe("arch -x86_64 /x/dist/crossover/live_test /x/testcases/t /x/ref") != nil, "live test step")
 check(InstallerModel.describe("unrelated") == nil, "unknown command has no step")
 
+// MARK: Finding CrossOver (issue #9: renamed copies in ~/Applications)
+
+do {
+    let system = scratch.appendingPathComponent("apps/system")
+    let home = scratch.appendingPathComponent("apps/home")
+    try! FileManager.default.createDirectory(at: system, withIntermediateDirectories: true)
+    let patched = home.appendingPathComponent("CrossOver_patched.app")
+    let dated = home.appendingPathComponent("CrossOver Preview-20261006.app")
+    let nested = home.appendingPathComponent("Games/CrossOver.app")
+    for app in [patched, dated, nested] {
+        try! FileManager.default.createDirectory(at: app.appendingPathComponent(SystemCheck.crossoverMarker),
+                                                 withIntermediateDirectories: true)
+    }
+    write("", home.appendingPathComponent("CrossOver/Game.app/Contents/Info.plist"))   // bottle launcher
+    write("", home.appendingPathComponent("Steam.app/Contents/Info.plist"))
+    try! FileManager.default.createDirectory(at: dated.appendingPathComponent(SystemCheck.d3dmetalPaths[0]),
+                                             withIntermediateDirectories: true)
+    try! FileManager.default.createDirectory(at: nested.appendingPathComponent(SystemCheck.d3dmetalPaths[1]),
+                                             withIntermediateDirectories: true)
+    let apps = SystemCheck.crossoverApps(in: [system, home])
+    check(apps.map(\.lastPathComponent) == ["CrossOver Preview-20261006.app", "CrossOver_patched.app", "CrossOver.app"],
+          "renamed copies found, launchers skipped: \(apps.map(\.path))")
+    check(SystemCheck.d3dmetal(in: dated)?.path.hasSuffix("apple_gptk/external/D3DMetal.framework") == true, "GPTK 1 path")
+    check(SystemCheck.d3dmetal(in: nested)?.path.hasSuffix("apple_gptk3/external/D3DMetal.framework") == true, "GPTK 3 path")
+    check(SystemCheck.d3dmetal(in: patched) == nil, "no D3DMetal")
+    let standard = system.appendingPathComponent("CrossOver.app")
+    try! FileManager.default.createDirectory(at: standard.appendingPathComponent(SystemCheck.crossoverMarker),
+                                             withIntermediateDirectories: true)
+    check(SystemCheck.crossoverApps(in: [system, home]).first?.path == standard.path, "standard name in /Applications first")
+}
+
 let requirements = SystemCheck.all()
 check(requirements.map(\.kind) == [.xcode, .metal, .rosetta, .crossover], "requirement order")
 for requirement in requirements {
     print("  \(requirement.ok ? "ok  " : "todo") \(requirement.title): \(requirement.detail)")
     check(requirement.ok || requirement.kind == .metal && !requirements[0].ok || requirement.fix != nil,
           "\(requirement.title) offers a fix")
+    if requirement.kind == .crossover {
+        check(requirement.ok == (requirement.location.map { SystemCheck.d3dmetal(in: $0) != nil } ?? false),
+              "CrossOver location: \(String(describing: requirement.location))")
+    }
 }
 print("  chip: \(Chip.name), neural accelerators: \(Chip.hasNeuralAccelerators)")
 

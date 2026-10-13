@@ -96,6 +96,10 @@ final class InstallerModel {
         guard canInstall, let bottle = selected else { return }
         var arguments = ["install", "--bottle", bottle.conf.path, "--profile", profile.rawValue]
         if panel { arguments.append("--panel") }
+        // The same CrossOver the requirements list shows, not the script's own pick.
+        if let app = requirements.first(where: { $0.kind == .crossover })?.location {
+            arguments += ["--crossover", app.path]
+        }
         runInstaller(String(localized: "Installing into “\(bottle.name)”"), arguments) { [weak self] ok, cancelled in
             guard let self else { return }
             if ok {
@@ -121,10 +125,17 @@ final class InstallerModel {
     }
 
     func fix(_ requirement: Requirement) {
-        guard let fix = requirement.fix, !busy else { return }
+        guard let fix = requirement.fix else { return }
+        self.fix(fix, for: requirement)
+    }
+
+    func fix(_ fix: Requirement.Fix, for requirement: Requirement) {
+        guard !busy else { return }
         switch fix {
         case .open(let url):
             NSWorkspace.shared.open(url)
+        case .chooseCrossOver:
+            chooseCrossOver()
         case .administrator(let command):
             begin(requirement.title)
             step = String(localized: "Waiting for your password…")
@@ -157,6 +168,27 @@ final class InstallerModel {
         cancelling = true
         step = String(localized: "Cancelling…")
         command.cancel()
+    }
+
+    /// Picks the CrossOver.app to copy D3DMetal from, wherever it is and
+    /// whatever it is called. Remembered until that app is gone.
+    func chooseCrossOver() {
+        let panel = NSOpenPanel()
+        panel.message = String(localized: "Choose the CrossOver app you start your games with.")
+        panel.prompt = String(localized: "Choose")
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.canChooseDirectories = false
+        panel.treatsFilePackagesAsDirectories = false
+        panel.directoryURL = (SystemCheck.crossoverApps.first?.deletingLastPathComponent())
+            ?? URL(fileURLWithPath: "/Applications")
+        guard panel.runModal() == .OK, let app = panel.url else { return }
+        guard SystemCheck.isCrossOver(app) else {
+            banner = Banner(style: .failure, title: String(localized: "Not a CrossOver app"),
+                            message: String(localized: "\(app.lastPathComponent) has no CrossOver inside. Choose CrossOver.app or its renamed copy."))
+            return
+        }
+        SystemCheck.chosenCrossOver = app
+        refresh()
     }
 
     func openPanel() { NSWorkspace.shared.open(panelApp) }

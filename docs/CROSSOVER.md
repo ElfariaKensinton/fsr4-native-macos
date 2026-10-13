@@ -19,11 +19,13 @@ Wine в CrossOver — x86_64 под Rosetta, с hardened runtime. Флага `al
 
 ## Что создаёт установка
 
-Источник фреймворка зашит в установщик:
+Источник фреймворка — найденный CrossOver, например:
 
 ```
 /Applications/CrossOver Preview.app/Contents/SharedSupport/CrossOver/lib/apple_gptk/external/D3DMetal.framework
 ```
+
+Если `apple_gptk` нет, берётся `lib/apple_gptk3/external/D3DMetal.framework`.
 
 `python3 tools/crossover/crossover_fsr4.py install` делает следующее.
 
@@ -59,7 +61,7 @@ dist/crossover/backups/Игры.cxbottle.conf
 
 Они должны остаться внутри `[EnvironmentVariables]`. Установщик дописывает их в конец файла; в бутылке «Игры» эта секция как раз последняя.
 
-Другие ключи бутылки, ярлыки и само приложение не трогаются. Повторный `install` заново копирует фреймворк из `/Applications` и заново накладывает только load-команду хука.
+Другие ключи бутылки, ярлыки и само приложение не трогаются. Повторный `install` заново копирует фреймворк из CrossOver и заново накладывает только load-команду хука.
 
 Команды:
 
@@ -76,7 +78,7 @@ python3 tools/crossover/crossover_fsr4.py restore
 
 Пока CrossOver запущен, в память уже загружен старый dylib. После `install` или `restore` процесс нужно закрыть полностью, не только окно игры.
 
-Установщик смотрит только копию приложения в `/Applications`. В Spotlight бывает вторая иконка из `~/Applications`; бутылки у них общие, источник фреймворка для копии — всё равно `/Applications`.
+Где ищется CrossOver: сначала `CrossOver.app` и `CrossOver Preview.app` в `/Applications`, потом в `~/Applications`, потом любая переименованная копия (`CrossOver_patched.app`, `CrossOver Preview-20261006.app`) в этих папках или на уровень глубже, потом копии, которые знает Spotlight/LaunchServices (другие диски). CrossOver узнаётся по папке `Contents/SharedSupport/CrossOver`, а не по имени. Если копий несколько, в приложении-установщике есть кнопка **Сменить…**, а в скрипте — `--crossover /путь/к/CrossOver.app`. Выбирайте ту копию, через которую запускаете игру. Бутылки у копий общие.
 
 ## Что делает хук
 

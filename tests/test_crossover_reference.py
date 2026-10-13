@@ -211,10 +211,38 @@ class CrossoverReferenceTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             missing, preview = Path(directory) / "CrossOver.app", Path(directory) / "CrossOver Preview.app"
             (preview / installer.FRAMEWORK_IN_APP).mkdir(parents=True)
-            with patch.object(installer, "CROSSOVER_APPS", (missing, preview)):
+            with patch.object(installer, "crossover_apps", return_value=[preview]):
                 self.assertEqual(installer.find_framework(), preview / installer.FRAMEWORK_IN_APP)
                 with self.assertRaisesRegex(SystemExit, "--crossover"):
                     installer.find_framework(str(missing))
+            with patch.object(installer, "crossover_apps", return_value=[]), \
+                 self.assertRaisesRegex(SystemExit, "--crossover"):
+                installer.find_framework()
+
+    def test_finds_renamed_crossover_copies(self):
+        # Issue #9: copies in ~/Applications named CrossOver_patched etc.
+        with tempfile.TemporaryDirectory() as directory:
+            system, home = Path(directory) / "system", Path(directory) / "home"
+            system.mkdir()
+            patched = home / "CrossOver_patched.app"
+            dated = home / "CrossOver Preview-20261006.app"
+            nested = home / "Games/CrossOver.app"
+            for app in (patched, dated, nested):
+                (app / installer.CROSSOVER_MARKER).mkdir(parents=True)
+            (home / "CrossOver/Game.app/Contents").mkdir(parents=True)   # bottle launcher, not CrossOver
+            (home / "Steam.app/Contents").mkdir(parents=True)
+            (dated / installer.FRAMEWORK_IN_APP).mkdir(parents=True)
+            (nested / installer.FRAMEWORKS_IN_APP[1]).mkdir(parents=True)
+            apps = installer.crossover_apps((system, home), spotlight=False)
+            self.assertEqual(apps, [dated, patched, nested])
+            with patch.object(installer, "crossover_apps", return_value=apps):
+                self.assertEqual(installer.find_framework(), dated / installer.FRAMEWORK_IN_APP)
+            # GPTK 3-only layout
+            self.assertEqual(installer.find_framework(str(nested)), nested / installer.FRAMEWORKS_IN_APP[1])
+            # The standard name in /Applications comes first.
+            standard = system / "CrossOver.app"
+            (standard / installer.CROSSOVER_MARKER).mkdir(parents=True)
+            self.assertEqual(installer.crossover_apps((system, home), spotlight=False)[0], standard)
 
     def test_411_only_copy_rejects_fsr4_profile_before_building(self):
         with tempfile.TemporaryDirectory() as directory, \

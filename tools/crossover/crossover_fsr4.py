@@ -26,9 +26,15 @@ PANEL_APP = DIST / "FSR4 Panel.app"
 SMOKE_SRC = ROOT / "tools" / "crossover" / "smoke.m"
 LIVE_TEST_SRC = ROOT / "tools" / "crossover" / "live_test.mm"
 DLOPEN_SRC = ROOT / "tools" / "crossover" / "dlopen_test.c"
-FRAMEWORK_IN_APP = "Contents/SharedSupport/CrossOver/lib/apple_gptk/external/D3DMetal.framework"
-CROSSOVER_APPS = (Path("/Applications/CrossOver.app"), Path("/Applications/CrossOver Preview.app"),
-                  Path.home() / "Applications/CrossOver.app", Path.home() / "Applications/CrossOver Preview.app")
+# D3DMetal inside a CrossOver.app, in order of preference. Newer builds also
+# ship GPTK 3 in apple_gptk3; older ones only have apple_gptk.
+FRAMEWORKS_IN_APP = ("Contents/SharedSupport/CrossOver/lib/apple_gptk/external/D3DMetal.framework",
+                     "Contents/SharedSupport/CrossOver/lib/apple_gptk3/external/D3DMetal.framework")
+FRAMEWORK_IN_APP = FRAMEWORKS_IN_APP[0]
+CROSSOVER_MARKER = "Contents/SharedSupport/CrossOver"
+CROSSOVER_BUNDLE_ID = "com.codeweavers.CrossOver"
+APP_FOLDERS = (Path("/Applications"), Path.home() / "Applications")
+STANDARD_NAMES = ("CrossOver.app", "CrossOver Preview.app")
 BOTTLES = Path.home() / "Library/Application Support/CrossOver/Bottles"
 # Same deployment target as the Makefile: the live bridge uses Metal 4 APIs.
 MIN_MACOS = "26.0"
@@ -204,15 +210,73 @@ def patch_macho(path: Path):
     print(f"added LC_LOAD_DYLIB {LOAD_PATH.decode()} cmdsize={cmdsize}")
 
 
+def is_crossover(app: Path) -> bool:
+    """A CrossOver.app under any name (copies get renamed, e.g. CrossOver_patched)."""
+    return app.suffix == ".app" and (app / CROSSOVER_MARKER).is_dir()
+
+
+def spotlight_crossovers() -> list:
+    """CrossOver copies outside the Applications folders (other disks), by bundle id."""
+    try:
+        out = subprocess.run(["/usr/bin/mdfind", f"kMDItemCFBundleIdentifier == '{CROSSOVER_BUNDLE_ID}'"],
+                             capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    return [Path(line) for line in out.splitlines() if line.endswith(".app")]
+
+
+def crossover_apps(folders=APP_FOLDERS, spotlight=True) -> list:
+    """Installed CrossOver copies: CrossOver.app / CrossOver Preview.app in
+    /Applications, then ~/Applications, then any renamed copy in those folders
+    or one subfolder down, then Spotlight hits. Same order as the installer app."""
+    found = []
+
+    def add(app: Path):
+        if app not in found and is_crossover(app):
+            found.append(app)
+
+    for folder in folders:
+        for name in STANDARD_NAMES:
+            add(folder / name)
+    for folder in folders:
+        try:
+            entries = sorted(folder.iterdir(), key=lambda p: p.name.lower())
+        except OSError:
+            continue
+        for entry in entries:
+            if entry.suffix == ".app":
+                add(entry)
+            elif entry.is_dir() and not entry.name.startswith("."):
+                try:
+                    for sub in sorted(entry.glob("*.app"), key=lambda p: p.name.lower()):
+                        add(sub)
+                except OSError:
+                    pass
+    if spotlight:
+        for app in spotlight_crossovers():
+            add(app)
+    return found
+
+
+def framework_in(app: Path):
+    for relative in FRAMEWORKS_IN_APP:
+        if (app / relative).is_dir():
+            return app / relative
+    return None
+
+
 def find_framework(app: str = "") -> Path:
-    """D3DMetal.framework of --crossover, else the first installed CrossOver."""
-    apps = [Path(app)] if app else CROSSOVER_APPS
+    """D3DMetal.framework of --crossover, else the first installed CrossOver that has one."""
+    apps = [Path(app).expanduser()] if app else crossover_apps()
     for candidate in apps:
-        framework = candidate / FRAMEWORK_IN_APP
-        if framework.is_dir():
+        framework = framework_in(candidate)
+        if framework:
             return framework
-    raise SystemExit("D3DMetal.framework not found in " + ", ".join(map(str, apps))
-                     + "; install CrossOver 24+ or pass --crossover /path/to/CrossOver.app")
+    if app:
+        raise SystemExit(f"no D3DMetal.framework in {apps[0]}; pass --crossover with CrossOver.app 24+")
+    where = ", ".join(map(str, apps)) if apps else "/Applications or ~/Applications"
+    raise SystemExit(f"D3DMetal.framework not found in {where}; install CrossOver 24+ "
+                     "or pass --crossover /path/to/CrossOver.app")
 
 
 def bottle_names() -> list:
@@ -448,7 +512,8 @@ def main():
                         "(default: the only bottle; required when there are several)")
     i.add_argument("--no-bottle", action="store_true")
     i.add_argument("--crossover", default="",
-                   help="CrossOver.app to copy D3DMetal from (default: first found in /Applications)")
+                   help="CrossOver.app to copy D3DMetal from, any name or folder "
+                        "(default: first CrossOver found in /Applications or ~/Applications)")
     i.add_argument("--fsr-version", choices=("4.0.2", "4.1.1"), default="4.1.1",
                    help="FSR model version for the live bridge and installation test (default: 4.1.1)")
     i.add_argument("--profile", choices=PROFILES, default="lossy",
