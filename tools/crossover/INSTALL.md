@@ -20,7 +20,8 @@ This zip is the same thing for Terminal users.
 - Apple Silicon Mac, macOS 26 or newer. Tested on M5; M1–M4 use a
   half-matrix (`simd`) path with identical output, not benchmarked on
   those chips yet.
-- CrossOver 24+ (CrossOver.app or CrossOver Preview.app in /Applications)
+- CrossOver 24+ in /Applications or ~/Applications (any name, e.g. a renamed
+  copy; elsewhere: pass `--crossover`)
   with a bottle where the game runs with D3DMetal and DLSS enabled.
 - Rosetta 2 (`softwareupdate --install-rosetta`).
 - Xcode 26+ with the Metal Toolchain, and Python 3 (ships with Xcode).
@@ -88,7 +89,8 @@ python3 tools/crossover/crossover_fsr4.py restore --bottle "Steam"
 
 ## Troubleshooting
 
-- `D3DMetal.framework not found`: pass `--crossover "/Applications/CrossOver.app"`.
+- `D3DMetal.framework not found`: pass the CrossOver you play with, e.g.
+  `--crossover "$HOME/Applications/CrossOver_patched.app"`. In the app: **Choose…**.
 - `xcrun: error` or `metal: not found`: install the Metal Toolchain (above).
 - Panel shows "no data": the game hasn't used DLSS yet, or the bottle wasn't
   restarted after install.

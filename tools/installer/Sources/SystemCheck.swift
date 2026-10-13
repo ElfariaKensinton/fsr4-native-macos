@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Metal
 
@@ -12,6 +13,8 @@ struct Requirement: Identifiable, Sendable {
         case administrator(String)
         /// Command run without privileges, output streamed to the log.
         case stream([String])
+        /// Let the user pick a CrossOver.app that was not found automatically.
+        case chooseCrossOver
     }
 
     let kind: Kind
@@ -20,6 +23,10 @@ struct Requirement: Identifiable, Sendable {
     let detail: String
     var fix: Fix? = nil
     var fixTitle: String? = nil
+    var secondaryFix: Fix? = nil
+    var secondaryFixTitle: String? = nil
+    /// The app the check found (CrossOver.app); passed on to the install script.
+    var location: URL? = nil
 
     var id: Kind { kind }
 }
@@ -28,12 +35,79 @@ enum SystemCheck {
     static let minimumXcode = 26
     static let xcodeStore = URL(string: "macappstore://apps.apple.com/app/xcode/id497799835")!
     static let crossoverSite = URL(string: "https://www.codeweavers.com/crossover")!
-    static let d3dmetal = "Contents/SharedSupport/CrossOver/lib/apple_gptk/external/D3DMetal.framework"
-    /// Same search order as tools/crossover/crossover_fsr4.py.
+    static let crossoverBundleID = "com.codeweavers.CrossOver"
+    static let crossoverMarker = "Contents/SharedSupport/CrossOver"
+    /// D3DMetal inside a CrossOver.app, in order of preference (as in crossover_fsr4.py).
+    static let d3dmetalPaths = ["Contents/SharedSupport/CrossOver/lib/apple_gptk/external/D3DMetal.framework",
+                                "Contents/SharedSupport/CrossOver/lib/apple_gptk3/external/D3DMetal.framework"]
+    static let chosenCrossOverKey = "CrossOverApp"
+
+    /// A CrossOver.app under any name: copies get renamed (CrossOver_patched.app,
+    /// CrossOver Preview-20261006.app).
+    static func isCrossOver(_ app: URL) -> Bool {
+        var directory: ObjCBool = false
+        return app.pathExtension == "app"
+            && FileManager.default.fileExists(atPath: app.appendingPathComponent(crossoverMarker).path, isDirectory: &directory)
+            && directory.boolValue
+    }
+
+    static func d3dmetal(in app: URL) -> URL? {
+        d3dmetalPaths.map(app.appendingPathComponent).first { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
+    /// CrossOver copies in `folders`: the standard names first, then any renamed
+    /// copy directly in a folder or one subfolder down. Same order as
+    /// crossover_apps() in tools/crossover/crossover_fsr4.py.
+    static func crossoverApps(in folders: [URL]) -> [URL] {
+        let fm = FileManager.default
+        var found: [URL] = []
+        func add(_ app: URL) {
+            if !found.contains(where: { $0.path == app.path }) && isCrossOver(app) { found.append(app) }
+        }
+        func apps(in folder: URL) -> [String] {
+            ((try? fm.contentsOfDirectory(atPath: folder.path)) ?? []).sorted { $0.lowercased() < $1.lowercased() }
+        }
+        for folder in folders {
+            for name in ["CrossOver.app", "CrossOver Preview.app"] { add(folder.appendingPathComponent(name)) }
+        }
+        for folder in folders {
+            for name in apps(in: folder) where !name.hasPrefix(".") {
+                let entry = folder.appendingPathComponent(name)
+                if entry.pathExtension == "app" {
+                    add(entry)
+                } else {
+                    for sub in apps(in: entry) where sub.hasSuffix(".app") { add(entry.appendingPathComponent(sub)) }
+                }
+            }
+        }
+        return found
+    }
+
+    /// Every CrossOver this Mac knows about: the Applications folders, then
+    /// copies LaunchServices has seen elsewhere (other disks). The copy the
+    /// user picked with Choose… comes first.
     static var crossoverApps: [URL] {
         let home = FileManager.default.homeDirectoryForCurrentUser
-        return ["/Applications/CrossOver.app", "/Applications/CrossOver Preview.app"].map(URL.init(fileURLWithPath:))
-            + ["Applications/CrossOver.app", "Applications/CrossOver Preview.app"].map(home.appendingPathComponent)
+        var apps = crossoverApps(in: [URL(fileURLWithPath: "/Applications"), home.appendingPathComponent("Applications")])
+        for app in NSWorkspace.shared.urlsForApplications(withBundleIdentifier: crossoverBundleID)
+        where !apps.contains(where: { $0.path == app.path }) && isCrossOver(app) {
+            apps.append(app)
+        }
+        if let chosen = chosenCrossOver {
+            apps.removeAll { $0.path == chosen.path }
+            apps.insert(chosen, at: 0)
+        }
+        return apps
+    }
+
+    /// CrossOver.app picked with Choose…, while it still exists.
+    static var chosenCrossOver: URL? {
+        get {
+            guard let path = UserDefaults.standard.string(forKey: chosenCrossOverKey) else { return nil }
+            let app = URL(fileURLWithPath: path)
+            return isCrossOver(app) ? app : nil
+        }
+        set { UserDefaults.standard.set(newValue?.path, forKey: chosenCrossOverKey) }
     }
 
     static func all() -> [Requirement] {
@@ -139,16 +213,28 @@ enum SystemCheck {
 
     static func checkCrossOver() -> Requirement {
         let title = String(localized: "CrossOver 24+")
-        let fm = FileManager.default
-        let apps = crossoverApps.filter { fm.fileExists(atPath: $0.path) }
-        if let app = apps.first(where: { fm.fileExists(atPath: $0.appendingPathComponent(d3dmetal).path) }) {
-            return Requirement(kind: .crossover, title: title, ok: true, detail: app.deletingPathExtension().lastPathComponent)
+        let apps = crossoverApps
+        let choose = String(localized: "Choose…")
+        // A copy picked by hand is used as is, never swapped for another one.
+        let candidates = chosenCrossOver.map { [$0] } ?? apps
+        if let app = candidates.first(where: { d3dmetal(in: $0) != nil }) {
+            let version = (NSDictionary(contentsOf: app.appendingPathComponent("Contents/Info.plist"))?["CFBundleShortVersionString"] as? String).map { " \($0)" } ?? ""
+            let folder = (app.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath
+            var requirement = Requirement(kind: .crossover, title: title, ok: true,
+                                          detail: "\(app.deletingPathExtension().lastPathComponent)\(version) · \(folder)",
+                                          location: app)
+            if apps.count > 1 {
+                requirement.fix = .chooseCrossOver
+                requirement.fixTitle = String(localized: "Change…")
+            }
+            return requirement
         }
         let detail = apps.isEmpty
-            ? String(localized: "Runs the Windows game. Install it to /Applications.")
-            : String(localized: "This CrossOver has no D3DMetal. Update to version 24 or newer.")
+            ? String(localized: "Runs the Windows game. Not found in /Applications or ~/Applications: install it, or choose where it is.")
+            : String(localized: "This CrossOver has no D3DMetal. Update to version 24 or newer, or choose another copy.")
         return Requirement(kind: .crossover, title: title, ok: false, detail: detail,
-                           fix: .open(crossoverSite), fixTitle: String(localized: "Download"))
+                           fix: .chooseCrossOver, fixTitle: choose,
+                           secondaryFix: .open(crossoverSite), secondaryFixTitle: String(localized: "Download"))
     }
 
     /// A wineserver runs while any CrossOver bottle is open.

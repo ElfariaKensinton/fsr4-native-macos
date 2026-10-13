@@ -104,8 +104,12 @@ struct ContentView: View {
                             .textSelection(.enabled)
                     }
                     Spacer()
-                    if !requirement.ok, let title = requirement.fixTitle {
-                        Button(title) { model.fix(requirement) }
+                    if let fix = requirement.secondaryFix, let title = requirement.secondaryFixTitle {
+                        Button(title) { model.fix(fix, for: requirement) }
+                            .disabled(model.busy)
+                    }
+                    if let fix = requirement.fix, let title = requirement.fixTitle {
+                        Button(title) { model.fix(fix, for: requirement) }
                             .disabled(model.busy)
                     }
                 }

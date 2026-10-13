@@ -15,14 +15,15 @@ Works as a standalone tool and inside games via CrossOver (DLSS → FSR 4).
 
 ## Easiest: the FSR4 Installer app
 
-1. Download **FSR4-Installer-v1.3.dmg** from the
+1. Download **FSR4-Installer-v1.5.dmg** from the
    [latest release](https://github.com/UzenUPoZiTiV4ik/fsr4-native-macos/releases/latest)
    and drag **FSR4 Installer** to Applications.
 2. First launch: the app is not notarized, so macOS blocks it. Open
    **System Settings → Privacy & Security** and press **Open Anyway**
    (or run `xattr -dr com.apple.quarantine "/Applications/FSR4 Installer.app"`).
 3. The app checks Xcode, the Metal Toolchain, Rosetta and CrossOver, and
-   offers a button for anything missing.
+   offers a button for anything missing. CrossOver is found in /Applications
+   or ~/Applications under any name; if it is elsewhere, press **Choose…**.
 4. Quit the game and its bottle, pick the bottle, choose a mode and press
    **Install**. It takes about a minute. Then start the game and turn on **DLSS**.
 

@@ -31,8 +31,14 @@
 "CrossOver runs Windows games as Intel code." = "CrossOver запускает Windows-игры как код для Intel.";
 "Install" = "Установить";
 "CrossOver 24+" = "CrossOver 24+";
-"Runs the Windows game. Install it to /Applications." = "Запускает Windows-игру. Установите его в /Applications.";
-"This CrossOver has no D3DMetal. Update to version 24 or newer." = "В этом CrossOver нет D3DMetal. Обновите до версии 24 или новее.";
+"Runs the Windows game. Not found in /Applications or ~/Applications: install it, or choose where it is." = "Запускает Windows-игру. В /Applications и ~/Applications не найден: установите его или укажите, где он лежит.";
+"This CrossOver has no D3DMetal. Update to version 24 or newer, or choose another copy." = "В этом CrossOver нет D3DMetal. Обновите до версии 24 или новее либо выберите другую копию.";
+"Choose…" = "Выбрать…";
+"Change…" = "Сменить…";
+"Choose" = "Выбрать";
+"Choose the CrossOver app you start your games with." = "Выберите CrossOver, через который вы запускаете игры.";
+"Not a CrossOver app" = "Это не CrossOver";
+"%@ has no CrossOver inside. Choose CrossOver.app or its renamed copy." = "Внутри %@ нет CrossOver. Выберите CrossOver.app или его переименованную копию.";
 
 /* Bottles */
 "CrossOver bottle" = "Бутылка CrossOver";
