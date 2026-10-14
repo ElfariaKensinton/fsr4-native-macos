@@ -16,6 +16,7 @@
 #include "fsr4_input.h"
 #include "fsr4_log.h"
 #include "fsr411_model.h"
+#include "fsr411_scratch_layout.h"
 
 namespace fsr411 {
 
@@ -110,6 +111,59 @@ inline uint32_t ceil_div(uint32_t x, uint32_t y) { return (x + y - 1u) / y; }
 inline NSString *ns(const std::string &x) { return [NSString stringWithUTF8String:x.c_str()]; }
 inline std::string utf8(NSString *x) { return x ? std::string(x.UTF8String) : std::string(); }
 inline std::string metal_error(NSError *error) { return error ? utf8(error.localizedDescription) : "Metal allocation failed"; }
+// The compiler publishes bindings.json after each stage. Its presence alone
+// does not mean an interrupted or --only build is ready for --no-compile.
+// This checks completeness only; layout/key/order validation stays in the
+// loader so a complete but incompatible alias bundle is still rejected.
+inline bool shader_bundle_files_ready(const std::string &directory) {
+    NSString *dir=ns(directory);
+    NSData *data=[NSData dataWithContentsOfFile:[dir stringByAppendingPathComponent:@"bindings.json"]];
+    id manifest=data?[NSJSONSerialization JSONObjectWithData:data options:0 error:nil]:nil;
+    if(![manifest isKindOfClass:[NSDictionary class]]) return false;
+    NSDictionary *entries=manifest[@"kernels"];
+    if(![entries isKindOfClass:[NSDictionary class]]) return false;
+    for(unsigned index=0;index<27;++index) {
+        const std::string name=index==0?"pre":index==26?"post":
+            std::string(index&1?"pad":"pass")+std::to_string(index/2);
+        if(![entries[ns(name)] isKindOfClass:[NSDictionary class]]) return false;
+    }
+    if(!entries[@"ae"] || !entries[@"rcas"]) return false;
+    for(NSString *flag in @[@"auto_exposure_dispatches",@"separate_reuse_pre"])
+        if(manifest[flag] && ![manifest[flag] isKindOfClass:[NSNumber class]]) return false;
+    if([manifest[@"auto_exposure_dispatches"] unsignedIntValue]==2 && !entries[@"ae_finalize"]) return false;
+    if([manifest[@"separate_reuse_pre"] boolValue] && !entries[@"pre_reuse"]) return false;
+    NSFileManager *files=[NSFileManager defaultManager];
+    auto readyFile=[&](id name) {
+        if(![name isKindOfClass:[NSString class]] || ![name length]) return false;
+        NSString *path=[[dir stringByAppendingPathComponent:name] stringByResolvingSymlinksInPath];
+        NSDictionary *attributes=[files attributesOfItemAtPath:path error:nil];
+        return [attributes[NSFileType] isEqual:NSFileTypeRegular] &&
+            [attributes[NSFileSize] unsignedLongLongValue]>0 && [files isReadableFileAtPath:path];
+    };
+    // Inspect every entry: the loader also loads optional helpers. Requiring
+    // generated pass files permits its fallback when a native pass is absent.
+    for(NSString *name in entries) {
+        NSDictionary *entry=entries[name];
+        if(![entry isKindOfClass:[NSDictionary class]] || !readyFile(entry[@"library"]) ||
+           ![entry[@"entry"] isKindOfClass:[NSString class]] || ![entry[@"entry"] length]) return false;
+        NSArray *wg=entry[@"wgsize"];
+        if(![wg isKindOfClass:[NSArray class]] || wg.count!=3) return false;
+        for(id size in wg) if(![size isKindOfClass:[NSNumber class]] || [size longLongValue]<=0) return false;
+        bool needsTables=false;
+        for(NSString *kind in @[@"buffers",@"textures",@"samplers"]) {
+            NSArray *bindings=entry[kind];
+            if(![bindings isKindOfClass:[NSArray class]]) return false;
+            for(NSArray *binding in bindings) {
+                if(![binding isKindOfClass:[NSArray class]] || binding.count!=2 ||
+                   ![binding[0] isKindOfClass:[NSNumber class]] || [binding[0] longLongValue]<0 ||
+                   ![binding[1] isKindOfClass:[NSString class]]) return false;
+                needsTables |= [kind isEqual:@"buffers"] && [binding[1] isEqual:@"Fsr411Tables"];
+            }
+        }
+        if((needsTables || entry[@"literal_tables"]) && !readyFile(entry[@"literal_tables"])) return false;
+    }
+    return true;
+}
 inline TensorSizes tensor_sizes(uint32_t w, uint32_t h) {
     // Provider tensor constants are indexed by graph edges, not by passes.
     constexpr unsigned shifts[17] = {1,0,1,1,2,2,2,3,3,3,2,2,1,1,0,0,0};
@@ -162,6 +216,8 @@ struct Session {
     bool splitAutoExposure = false;
     size_t scratchBytes = 0;
     bool ultraPerformance = false, externalPostCnb = false;
+    bool postCnbAlias = false;
+    PostCnbScratchLayout scratchLayout = {};
     Profile profile = Profile::Exact;
     // halfWeights: Simd only, nativeWeights widened element-wise to half.
     id<MTLBuffer> initializer = nil, nativeWeights = nil, halfWeights = nil;
@@ -189,6 +245,8 @@ struct View {
     Fsr4InputHistory inputHistory = {};
     Fsr4InputPrepared prepared = {};
     std::string variantKey, backendLabel;
+    bool postCnbAlias = false;
+    PostCnbScratchLayout scratchLayout = {};
     id<MTLTexture> history = nil, reprojected = nil, recurrent = nil, autoExposure = nil;
     id<MTLBuffer> scratch = nil, spdAtomic = nil;
     id<MTLBuffer> lossyMotion = nil, lossyPlane = nil;
@@ -325,9 +383,15 @@ public:
             if (view.zeroScratch) clear_buffer(enc, m4, *slot, "clearScratch", view.scratch, 8192);
             if (skip) clear_buffer(enc,m4,*slot,"clearLossyPlane",view.lossyPlane,10240);
             if (view.zeroTargets || p.reset) {
-                clear_texture(enc, m4, *slot, "clearHistory", view.history);
-                clear_texture(enc, m4, *slot, "clearReprojected", view.reprojected);
-                clear_texture(enc, m4, *slot, "clearRecurrent", view.recurrent);
+                // Reset PRE reads current inputs only and fully overwrites
+                // reprojected; POST initializes history and recurrent before
+                // subsequent frames can sample them. Preserve initialization
+                // for newly supplied targets when history is not reset.
+                if (!p.reset) {
+                    clear_texture(enc, m4, *slot, "clearHistory", view.history);
+                    clear_texture(enc, m4, *slot, "clearReprojected", view.reprojected);
+                    clear_texture(enc, m4, *slot, "clearRecurrent", view.recurrent);
+                }
                 helper(enc, m4, *slot, "initExposure", "fsr411_init_exposure", {}, {view.autoExposure}, MTLSizeMake(1,1,1));
             }
             if (p.copyMask & FSR4_INPUT_COPY_COLOR) {
@@ -419,6 +483,8 @@ public:
         view.prepared = p;
         view.variantKey = session->key;
         view.backendLabel = kernels_label(kind);
+        view.postCnbAlias = session->postCnbAlias;
+        view.scratchLayout = session->scratchLayout;
         view.cacheValid=session->externalPostCnb;
         view.skippedInference=skip;
         if(skip) ++view.reusedFrames;else ++view.neuralRuns;
@@ -713,12 +779,18 @@ private:
         if (useSimd && !verify_simd(lib,error)) return false;
         std::map<std::string,id<MTLComputePipelineState>> states;
         NSMutableDictionary *passes=[manifest[@"passes"] mutableCopy];
-        const size_t appendBase=(s.scratchBytes+255)&~size_t(255);
         if(s.externalPostCnb) {
             NSDictionary *post=manifest[@"auxiliary_passes"][@"post_cnb"];
             if(!post || ![post[@"output_offset_base"] isEqual:@"scratch_append"]) { error="missing native 4.1.1 POST CNB";return false; }
+            if([post[@"scratch_append_bytes"] unsignedLongLongValue]!=s.scratchLayout.cacheBytes ||
+               [post[@"scratch_append_alignment"] unsignedIntValue]!=256u ||
+               ![post[@"kind"] isEqual:@"cnb"] || [post[@"input_slot"] unsignedIntValue]!=13u ||
+               [post[@"output_slot"] unsignedIntValue]!=13u || post[@"skip_slot"] ||
+               [post[@"before_stage"] unsignedIntValue]!=26u) {
+                error="native 4.1.1 POST CNB layout mismatch";return false;
+            }
             passes[@"13"]=post;
-            s.scratchBytes=appendBase+[post[@"scratch_append_bytes"] unsignedLongLongValue];
+            s.scratchBytes=size_t(s.scratchLayout.allocationBytes);
         }
         for (NSString *key in passes) {
             NSDictionary *entry=passes[key]; NativePass np;
@@ -730,6 +802,9 @@ private:
             np.offset=[entry[@"parameter_offset"] unsignedIntValue];
             if (np.offset+sizeof(PassParams)>params.length || kNative+np.offset+sizeof(PassParams)>8192) { error="native parameter region overflow"; return false; }
             memcpy(&np.parameters,(const uint8_t *)params.bytes+np.offset,sizeof(PassParams));
+            if([key intValue]==13 && !post_cnb_tensors_match_layout(np.parameters,s.scratchLayout)) {
+                error="native 4.1.1 POST CNB tensors do not match the scratch layout";return false;
+            }
             // Winograd reads its transformed 3x3 weights from the half copy.
             if (wino) np.parameters.weights[0]=[wino[@"weights0"] unsignedIntValue];
             // Shared entry names have different weights, strides and epilogues
@@ -752,7 +827,7 @@ private:
                 states.emplace(pipelineKey,pso);
             }
             np.pso=states.at(pipelineKey);
-            if ([key intValue]==13) np.parameters.output.offset+=uint32_t(appendBase);
+            if ([key intValue]==13) np.parameters.output.offset+=uint32_t(s.scratchLayout.cacheOffset);
             np.inputSlot=[entry[@"input_slot"] unsignedIntValue]; np.outputSlot=[entry[@"output_slot"] unsignedIntValue];
             np.hasSkip=entry[@"skip_slot"]!=nil; np.skipSlot=[entry[@"skip_slot"] unsignedIntValue];
             np.tileX=[dispatch[@"tile"][0] unsignedIntValue]; np.tileY=[dispatch[@"tile"][1] unsignedIntValue];
@@ -765,12 +840,28 @@ private:
     Session *ensure_session(int tier, const Fsr4InputPrepared &p, const Options &o, Kernels kind, std::string &error) {
         const bool portable=kind!=Kernels::Reference;
         const bool externalPost=portable || o.profile==Profile::Lossy;
-        const std::string key="fsr411_"+std::to_string(tier)+"_di"+std::to_string(p.depthReversed)
+        const std::string legacyKey="fsr411_"+std::to_string(tier)+"_di"+std::to_string(p.depthReversed)
             +"_lm"+std::to_string(p.lowResMV)+"_jm"+std::to_string(p.jitteredMV)+"_cs"+std::to_string(o.colorspace)
             +"_ae"+std::to_string(p.autoExposure)+"_o"+std::to_string(o.optimize)
             +(o.ultraPerformance?"_up1":"")+(o.profile==Profile::Lossy?"_lossy":o.profile==Profile::ExactFast?"_fast":"")
             +(externalPost?"_pc1":"")+(o.strictMath&&o.profile!=Profile::Exact?"_sm1":"");
-        const std::string cacheKey=key+(kind==Kernels::Mpp?"_mpp":kind==Kernels::Simd?"_simd":kind==Kernels::Scalar?"_scalar":"_ref");
+        // Keep reference captures and existing no-compile bundles on their
+        // appended-cache ABI. A separate key prevents mixing POST addresses.
+        bool postCnbAlias=portable && o.optimize;
+        const std::string suffix=kind==Kernels::Mpp?"_mpp":kind==Kernels::Simd?"_simd":kind==Kernels::Scalar?"_scalar":"_ref";
+        if(postCnbAlias) {
+            auto existing=sessions_.find(legacyKey+"_ca1"+suffix);
+            if(existing!=sessions_.end()) return existing->second.get();
+            if(!o.allowCompile) {
+                // Pin an established fallback too: no disk polling or history
+                // reset halfway through a stream when a cache build finishes.
+                existing=sessions_.find(legacyKey+suffix);
+                if(existing!=sessions_.end()) return existing->second.get();
+                postCnbAlias=shader_bundle_files_ready(buildDir_+"/"+legacyKey+"_ca1");
+            }
+        }
+        const std::string key=legacyKey+(postCnbAlias?"_ca1":"");
+        const std::string cacheKey=key+suffix;
         auto existing=sessions_.find(cacheKey); if(existing!=sessions_.end()) return existing->second.get();
         if (o.allowCompile && !run(@[@"python3",ns(root_+"/tools/compile_fsr411.py"),@"--root",ns(root_),@"--builddir",ns(buildDir_),
             @"--res",ns(std::to_string(tier)),@"--depth-inverted",ns(std::to_string(p.depthReversed)),
@@ -778,21 +869,55 @@ private:
             @"--colorspace",ns(std::to_string(o.colorspace)),@"--auto-exposure",ns(std::to_string(p.autoExposure)),
             @"--optimize",ns(std::to_string(o.optimize)),@"--ultra-performance",o.ultraPerformance?@"1":@"0",
             @"--profile",@(profile_name(o.profile)),@"--external-post-cnb",externalPost?@"1":@"0",
-            @"--strict-math",o.strictMath&&o.profile!=Profile::Exact?@"1":@"0"],error)) return nullptr;
+            @"--strict-math",o.strictMath&&o.profile!=Profile::Exact?@"1":@"0",
+            @"--post-cnb-alias",postCnbAlias?@"1":@"0"],error)) return nullptr;
         auto manifest=json(buildDir_+"/"+key+"/bindings.json",error);
         if (!manifest || ![manifest[@"version"] isEqual:@"4.1.1"] || [manifest[@"order"] count]!=27) return nullptr;
+        if([manifest[@"post_cnb_alias"] boolValue]!=postCnbAlias) {
+            error="FSR 4.1.1 POST CNB shader key/layout mismatch";return nullptr;
+        }
         auto s=std::make_unique<Session>(); s->key=cacheKey; s->tier=tier;
         s->postPixelsPerGroup=manifest[@"post_pixels_per_group"]?[manifest[@"post_pixels_per_group"] unsignedIntValue]:32;
         if(s->postPixelsPerGroup!=16 && s->postPixelsPerGroup!=32) {error="invalid POST dispatch geometry";return nullptr;}
         s->splitAutoExposure=[manifest[@"auto_exposure_dispatches"] unsignedIntValue]==2;
         s->ultraPerformance=o.ultraPerformance;s->externalPostCnb=externalPost;s->profile=o.profile;
+        s->postCnbAlias=postCnbAlias;
         s->scratchBytes=[manifest[@"scratch_bytes"] unsignedLongLongValue];
+        s->scratchLayout.arenaBytes=s->scratchLayout.allocationBytes=s->scratchBytes;
+        if(externalPost) {
+            if(!post_cnb_scratch_layout(uint32_t(tier),postCnbAlias,s->scratchLayout) ||
+               s->scratchLayout.arenaBytes!=s->scratchBytes) {
+                error="FSR 4.1.1 original scratch arena mismatch";return nullptr;
+            }
+            NSDictionary *layout=manifest[@"post_cnb_layout"];
+            // Old append bundles did not carry layout metadata. New alias
+            // bundles must state every byte range used by the host and POST.
+            if(postCnbAlias && !layout) {error="missing POST CNB alias layout";return nullptr;}
+            if(layout && (![layout isKindOfClass:[NSDictionary class]] ||
+                ![layout[@"policy"] isEqual:postCnbAlias?@"alias_after_pass12_v1":@"append_v1"] ||
+                [layout[@"arena_bytes"] unsignedLongLongValue]!=s->scratchLayout.arenaBytes ||
+                [layout[@"source_plane_bytes"] unsignedLongLongValue]!=s->scratchLayout.sourcePlaneBytes ||
+                [layout[@"offset"] unsignedLongLongValue]!=s->scratchLayout.cacheOffset ||
+                [layout[@"bytes"] unsignedLongLongValue]!=s->scratchLayout.cacheBytes ||
+                [layout[@"row_stride"] unsignedLongLongValue]!=s->scratchLayout.rowStride ||
+                [layout[@"allocated_bytes"] unsignedLongLongValue]!=s->scratchLayout.allocationBytes ||
+                ![layout[@"valid_after"] isEqual:@"post_cnb"] ||
+                !layout[@"preserves_neural_intermediates_after_post"] ||
+                [layout[@"preserves_neural_intermediates_after_post"] boolValue]==postCnbAlias)) {
+                error="FSR 4.1.1 POST CNB layout metadata mismatch";return nullptr;
+            }
+        }
         NSData *init=[NSData dataWithContentsOfFile:ns(root_+"/third_party/fsr411/"+
             (o.ultraPerformance?"initializers-ultraperformance.bin":"initializers.bin"))];
         if (init.length!=131072 || !s->scratchBytes) { error="missing real FSR 4.1.1 initializer"; return nullptr; }
         s->initializer=[device_ newBufferWithBytes:init.bytes length:init.length options:MTLResourceStorageModeShared];
         if (!s->initializer) { error="cannot allocate FSR 4.1.1 initializer"; return nullptr; }
         for (NSString *stage in manifest[@"order"]) s->order.push_back(utf8(stage));
+        if(postCnbAlias) for(size_t index=0;index<s->order.size();++index) {
+            const std::string expected=index==0?"pre":index==26?"post":
+                std::string(index&1?"pad":"pass")+std::to_string(index/2);
+            if(s->order[index]!=expected) {error="POST CNB alias requires the original graph order";return nullptr;}
+        }
         if (externalPost && !load_native(*s,o.allowCompile,kind,error)) return nullptr;
         NSDictionary *entries=manifest[@"kernels"];
         for (NSString *name in entries) {

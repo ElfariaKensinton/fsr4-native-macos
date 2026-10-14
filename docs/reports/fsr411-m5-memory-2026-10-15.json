@@ -1,0 +1,3215 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-15",
+  "timezone": "Europe/Moscow",
+  "scope": "FSR 4.1.1 only; FSR 4.0.2 unchanged",
+  "targets_ms": {
+    "lossy": [
+      2,
+      2.5
+    ],
+    "exact-fast": [
+      3,
+      3.5
+    ]
+  },
+  "targets_achieved": false,
+  "machine": {
+    "device": "Apple M5",
+    "gpu_cores": 10,
+    "memory_gb": 16,
+    "macos": "27.0.1",
+    "power": "AC, charging",
+    "low_power_mode": false,
+    "gpu_temperature_and_frequency_controlled": false
+  },
+  "input": {
+    "render": [
+      864,
+      560
+    ],
+    "output": [
+      1712,
+      1112
+    ],
+    "tensor_tier": 2160,
+    "frames_per_sequence": 8,
+    "capture": "1791590816258-62446",
+    "auto_exposure": true,
+    "rcas": true,
+    "sharpness": 0.4009999930858612
+  },
+  "accepted_changes": [
+    "Reuse dead scratch after pass12 for the POST-CNB cache; unchanged integer/floating arithmetic and neural schedule",
+    "Skip history/reprojected/recurrent clears on reset; retain exposure initialization and clears for non-reset target replacement"
+  ],
+  "interpretation": "Average medians move slightly but round ranges overlap; no established steady-frame speedup. Scratch allocation drops 28.5%, and reset-frame medians improve by 0.39–0.52 ms. Targets were not reached.",
+  "scratch_bytes": {
+    "before": 116409856,
+    "after": 83232256,
+    "saved": 33177600
+  },
+  "benchmark": {
+    "protocol": "Serial interleaved rounds, reversed on alternate rounds; median of round means; one warmup sequence per run; full command buffer timestamps; no diagnostic GPU work",
+    "rounds": 6,
+    "sequences_per_round": 30,
+    "plan_path": "build/target-ms-20261014/final-plan.json",
+    "plan": {
+      "binary": "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+      "input": "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+      "variants": [
+        {
+          "name": "baseline-full",
+          "profile": "exact-fast",
+          "root": "build/target-ms-20261014/baseline-root",
+          "builddir": "build/target-ms-20261014/baseline-cache",
+          "binary": "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+          "input": "build/ghosting-diagnostics/replay-input/1791590816258-62446"
+        },
+        {
+          "name": "candidate-full",
+          "profile": "exact-fast",
+          "root": "build/target-ms-20261014/candidate-root",
+          "builddir": "build/target-ms-20261014/candidate-cache",
+          "binary": "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+          "input": "build/ghosting-diagnostics/replay-input/1791590816258-62446"
+        },
+        {
+          "name": "baseline-lite",
+          "profile": "lossy",
+          "root": "build/target-ms-20261014/baseline-root",
+          "builddir": "build/target-ms-20261014/baseline-cache",
+          "binary": "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+          "input": "build/ghosting-diagnostics/replay-input/1791590816258-62446"
+        },
+        {
+          "name": "candidate-lite",
+          "profile": "lossy",
+          "root": "build/target-ms-20261014/candidate-root",
+          "builddir": "build/target-ms-20261014/candidate-cache",
+          "binary": "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+          "input": "build/ghosting-diagnostics/replay-input/1791590816258-62446"
+        }
+      ]
+    },
+    "summary": {
+      "baseline-full": {
+        "profile": "exact-fast",
+        "rounds": 6,
+        "all": {
+          "count": 1440,
+          "rounds": 6,
+          "median_round_mean_ms": 4.3953259543438135,
+          "round_mean_range_ms": [
+            4.296771703229751,
+            4.635583508691828
+          ]
+        },
+        "mean_ms": 4.3953259543438135,
+        "round_mean_range_ms": [
+          4.296771703229751,
+          4.635583508691828
+        ],
+        "reset": {
+          "count": 180,
+          "rounds": 6,
+          "median_round_mean_ms": 5.14927499946983,
+          "round_mean_range_ms": [
+            4.973031939395393,
+            5.345322232460603
+          ]
+        },
+        "reset_mean_ms": 5.14927499946983,
+        "full": {
+          "count": 1260,
+          "rounds": 6,
+          "median_round_mean_ms": 4.28761894789724,
+          "round_mean_range_ms": [
+            4.193281351001046,
+            4.534192262439146
+          ]
+        },
+        "full_mean_ms": 4.28761894789724,
+        "reuse": {
+          "count": 0,
+          "rounds": 0
+        }
+      },
+      "candidate-full": {
+        "profile": "exact-fast",
+        "rounds": 6,
+        "all": {
+          "count": 1440,
+          "rounds": 6,
+          "median_round_mean_ms": 4.358740800307714,
+          "round_mean_range_ms": [
+            4.191996182635194,
+            4.450016493259075
+          ]
+        },
+        "mean_ms": 4.358740800307714,
+        "round_mean_range_ms": [
+          4.191996182635194,
+          4.450016493259075
+        ],
+        "reset": {
+          "count": 180,
+          "rounds": 6,
+          "median_round_mean_ms": 4.632286116247997,
+          "round_mean_range_ms": [
+            4.494981945026666,
+            4.846876392063375
+          ]
+        },
+        "reset_mean_ms": 4.632286116247997,
+        "full": {
+          "count": 1260,
+          "rounds": 6,
+          "median_round_mean_ms": 4.307387898110652,
+          "round_mean_range_ms": [
+            4.148712502293555,
+            4.393322222001318
+          ]
+        },
+        "full_mean_ms": 4.307387898110652,
+        "reuse": {
+          "count": 0,
+          "rounds": 0
+        }
+      },
+      "baseline-lite": {
+        "profile": "lossy",
+        "rounds": 6,
+        "all": {
+          "count": 1440,
+          "rounds": 6,
+          "median_round_mean_ms": 3.0920313357152436,
+          "round_mean_range_ms": [
+            2.9853597210603766,
+            3.74096111045219
+          ]
+        },
+        "mean_ms": 3.0920313357152436,
+        "round_mean_range_ms": [
+          2.9853597210603766,
+          3.74096111045219
+        ],
+        "reset": {
+          "count": 180,
+          "rounds": 6,
+          "median_round_mean_ms": 5.000756245378095,
+          "round_mean_range_ms": [
+            4.86468889284879,
+            6.355212498844291
+          ]
+        },
+        "reset_mean_ms": 5.000756245378095,
+        "full": {
+          "count": 540,
+          "rounds": 6,
+          "median_round_mean_ms": 4.267455324427122,
+          "round_mean_range_ms": [
+            4.107444441696215,
+            5.14249814958829
+          ]
+        },
+        "full_mean_ms": 4.267455324427122,
+        "reuse": {
+          "count": 720,
+          "rounds": 6,
+          "median_round_mean_ms": 1.732764062762726,
+          "round_mean_range_ms": [
+            1.668655901933865,
+            2.0362454840020896
+          ]
+        },
+        "reuse_mean_ms": 1.732764062762726,
+        "steady_equal_mean_ms": 3.000455062930188
+      },
+      "candidate-lite": {
+        "profile": "lossy",
+        "rounds": 6,
+        "all": {
+          "count": 1440,
+          "rounds": 6,
+          "median_round_mean_ms": 3.042009288522725,
+          "round_mean_range_ms": [
+            2.9393991329319156,
+            3.0705052112656026
+          ]
+        },
+        "mean_ms": 3.042009288522725,
+        "round_mean_range_ms": [
+          2.9393991329319156,
+          3.0705052112656026
+        ],
+        "reset": {
+          "count": 180,
+          "rounds": 6,
+          "median_round_mean_ms": 4.609146527945995,
+          "round_mean_range_ms": [
+            4.506495833629742,
+            4.710295831318945
+          ]
+        },
+        "reset_mean_ms": 4.609146527945995,
+        "full": {
+          "count": 540,
+          "rounds": 6,
+          "median_round_mean_ms": 4.282197914047477,
+          "round_mean_range_ms": [
+            4.128573611766721,
+            4.304763430910599
+          ]
+        },
+        "full_mean_ms": 4.282197914047477,
+        "reuse": {
+          "count": 720,
+          "rounds": 6,
+          "median_round_mean_ms": 1.7199022583857488,
+          "round_mean_range_ms": [
+            1.6557440986313547,
+            1.7484833306904572
+          ]
+        },
+        "reuse_mean_ms": 1.7199022583857488,
+        "steady_equal_mean_ms": 3.0057818000285703
+      }
+    },
+    "runs": [
+      {
+        "variant": "baseline-full",
+        "round": 1,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-full-r1",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012891.3462248,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-full-r1/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-full-r1.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 2.009843349456787,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.635583508691828,
+          "median_ms": 4.56962501630187,
+          "min_ms": 3.812749986536801,
+          "max_ms": 7.063791621476412
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 5.345322232460603,
+          "median_ms": 5.249145848210901,
+          "min_ms": 4.531791666522622,
+          "max_ms": 6.733458372764289
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.534192262439146,
+          "median_ms": 4.532645834842697,
+          "min_ms": 3.812749986536801,
+          "max_ms": 7.063791621476412
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "candidate-full",
+        "round": 1,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-full-r1",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012893.357481,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-full-r1/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-full-r1.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.8374340534210205,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.390251215954777,
+          "median_ms": 4.327791655668989,
+          "min_ms": 3.8479166687466204,
+          "max_ms": 5.7924583670683205
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.587323608575389,
+          "median_ms": 4.429624998010695,
+          "min_ms": 4.189291677903384,
+          "max_ms": 5.7924583670683205
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.362098017008975,
+          "median_ms": 4.324125009588897,
+          "min_ms": 3.8479166687466204,
+          "max_ms": 5.574250011704862
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-lite",
+        "round": 1,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-lite-r1",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012895.1966841,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-lite-r1/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-lite-r1.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.5433547496795654,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.1195260392754185,
+          "median_ms": 3.2477916684001684,
+          "min_ms": 1.5269166324287653,
+          "max_ms": 6.583875045180321
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.995338884570326,
+          "median_ms": 5.001999990781769,
+          "min_ms": 4.508666635956615,
+          "max_ms": 6.583875045180321
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.316178700214045,
+          "median_ms": 4.388270841445774,
+          "min_ms": 3.8188750040717423,
+          "max_ms": 5.5202500079758465
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.7530833322477217,
+          "median_ms": 1.6009375103749335,
+          "min_ms": 1.5269166324287653,
+          "max_ms": 2.6767083327285945
+        },
+        "steady_equal_mean_ms": 3.0346310162308834
+      },
+      {
+        "variant": "candidate-lite",
+        "round": 1,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-lite-r1",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012896.7415092,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-lite-r1/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-lite-r1.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.4806747436523438,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.0524770816555247,
+          "median_ms": 3.2885624968912452,
+          "min_ms": 1.507833309005946,
+          "max_ms": 5.522791645489633
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.579544445732608,
+          "median_ms": 4.565312527120113,
+          "min_ms": 4.159750009421259,
+          "max_ms": 5.522791645489633
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.28394722014976,
+          "median_ms": 4.170083353528753,
+          "min_ms": 3.8016249891370535,
+          "max_ms": 5.48758334480226
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.747107636765577,
+          "median_ms": 1.5947500069160014,
+          "min_ms": 1.507833309005946,
+          "max_ms": 2.775500004645437
+        },
+        "steady_equal_mean_ms": 3.0155274284576685
+      },
+      {
+        "variant": "candidate-lite",
+        "round": 2,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-lite-r2",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012898.224076,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-lite-r2/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-lite-r2.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.4644889831542969,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.031541495389926,
+          "median_ms": 3.0711666913703084,
+          "min_ms": 1.5111666871234775,
+          "max_ms": 5.518874968402088
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.565427774408211,
+          "median_ms": 4.447833314770833,
+          "min_ms": 4.167999955825508,
+          "max_ms": 5.518874968402088
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.289876857203328,
+          "median_ms": 4.3243541731499135,
+          "min_ms": 3.8407083484344184,
+          "max_ms": 5.407416669186205
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.704318404275303,
+          "median_ms": 1.5946874918881804,
+          "min_ms": 1.5111666871234775,
+          "max_ms": 2.3016250343061984
+        },
+        "steady_equal_mean_ms": 2.9970976307393156
+      },
+      {
+        "variant": "baseline-lite",
+        "round": 2,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-lite-r2",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012899.690502,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-lite-r2/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-lite-r2.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.5201539993286133,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.1476854184196177,
+          "median_ms": 3.3095624821726233,
+          "min_ms": 1.515124982688576,
+          "max_ms": 6.408416666090488
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 5.162766676706572,
+          "median_ms": 5.142645823070779,
+          "min_ms": 4.498958354815841,
+          "max_ms": 6.408416666090488
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.314797222872989,
+          "median_ms": 4.303854133468121,
+          "min_ms": 3.8474583416245878,
+          "max_ms": 5.294708302244544
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.7685812505078502,
+          "median_ms": 1.6034166910685599,
+          "min_ms": 1.515124982688576,
+          "max_ms": 2.771666622720659
+        },
+        "steady_equal_mean_ms": 3.0416892366904196
+      },
+      {
+        "variant": "candidate-full",
+        "round": 2,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-full-r2",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012901.212302,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-full-r2/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-full-r2.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.8052740097045898,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.381399308234298,
+          "median_ms": 4.389958339743316,
+          "min_ms": 3.8797917077317834,
+          "max_ms": 5.634791683405638
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.677248623920605,
+          "median_ms": 4.617041675373912,
+          "min_ms": 4.233499988913536,
+          "max_ms": 5.634791683405638
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.339135120279112,
+          "median_ms": 4.374729178380221,
+          "min_ms": 3.8797917077317834,
+          "max_ms": 5.563541664741933
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-full",
+        "round": 2,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-full-r2",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012903.01954,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-full-r2/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-full-r2.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.8626668453216553,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.48095277606626,
+          "median_ms": 4.462854150915518,
+          "min_ms": 3.873624955303967,
+          "max_ms": 6.310499971732497
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 5.287829163717106,
+          "median_ms": 5.205041670706123,
+          "min_ms": 4.620333318598568,
+          "max_ms": 6.310499971732497
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.365684720687568,
+          "median_ms": 4.426083323778585,
+          "min_ms": 3.873624955303967,
+          "max_ms": 5.533125018700957
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-full",
+        "round": 3,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-full-r3",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012904.883936,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-full-r3/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-full-r3.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.9002931118011475,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.459373263913828,
+          "median_ms": 4.405625018989667,
+          "min_ms": 3.894083318300545,
+          "max_ms": 6.322916655335575
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 5.266622219157095,
+          "median_ms": 5.26822917163372,
+          "min_ms": 4.582791647408158,
+          "max_ms": 6.322916655335575
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.344051984593361,
+          "median_ms": 4.302104149246588,
+          "min_ms": 3.894083318300545,
+          "max_ms": 5.594708316493779
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "candidate-full",
+        "round": 3,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-full-r3",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012906.786129,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-full-r3/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-full-r3.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.827956199645996,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.450016493259075,
+          "median_ms": 4.397583339596167,
+          "min_ms": 3.8639582926407456,
+          "max_ms": 5.905625002924353
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.846876392063375,
+          "median_ms": 4.855520848650485,
+          "min_ms": 4.256458312738687,
+          "max_ms": 5.905625002924353
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.393322222001318,
+          "median_ms": 4.299395834095776,
+          "min_ms": 3.8639582926407456,
+          "max_ms": 5.552500020712614
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-lite",
+        "round": 3,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-lite-r3",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012908.616606,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-lite-r3/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-lite-r3.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.7525949478149414,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.74096111045219,
+          "median_ms": 3.88560417923145,
+          "min_ms": 1.5157500165514648,
+          "max_ms": 13.038750039413571
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 6.355212498844291,
+          "median_ms": 5.46489583211951,
+          "min_ms": 4.530291655100882,
+          "max_ms": 13.038750039413571
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 5.14249814958829,
+          "median_ms": 4.507583333179355,
+          "min_ms": 3.876500006299466,
+          "max_ms": 9.94245836045593
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 2.0362454840020896,
+          "median_ms": 1.6429374809376895,
+          "min_ms": 1.5157500165514648,
+          "max_ms": 5.870249995496124
+        },
+        "steady_equal_mean_ms": 3.5893718167951896
+      },
+      {
+        "variant": "candidate-lite",
+        "round": 3,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-lite-r3",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012910.3708549,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-lite-r3/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-lite-r3.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.4681060314178467,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.0594354143734868,
+          "median_ms": 3.3138333237729967,
+          "min_ms": 1.546999963466078,
+          "max_ms": 5.734250007662922
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.640204168390483,
+          "median_ms": 4.693250026321039,
+          "min_ms": 4.206000012345612,
+          "max_ms": 5.734250007662922
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.2804486079451936,
+          "median_ms": 4.341499996371567,
+          "min_ms": 3.8647082983516157,
+          "max_ms": 5.4236666765064
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.7484833306904572,
+          "median_ms": 1.6080208006314933,
+          "min_ms": 1.546999963466078,
+          "max_ms": 2.7629583491943777
+        },
+        "steady_equal_mean_ms": 3.0144659693178255
+      },
+      {
+        "variant": "candidate-lite",
+        "round": 4,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-lite-r4",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012911.841005,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-lite-r4/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-lite-r4.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.4417107105255127,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 2.9393991329319156,
+          "median_ms": 3.339624992804602,
+          "min_ms": 1.5481666778214276,
+          "max_ms": 5.432500038295984
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.506495833629742,
+          "median_ms": 4.347312496975064,
+          "min_ms": 4.194458306301385,
+          "max_ms": 5.432500038295984
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.128573611766721,
+          "median_ms": 3.947854187572375,
+          "min_ms": 3.882999997586012,
+          "max_ms": 5.386875011026859
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.6557440986313547,
+          "median_ms": 1.6029791731853038,
+          "min_ms": 1.5481666778214276,
+          "max_ms": 2.7962499880231917
+        },
+        "steady_equal_mean_ms": 2.892158855199038
+      },
+      {
+        "variant": "baseline-lite",
+        "round": 4,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-lite-r4",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012913.285111,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-lite-r4/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-lite-r4.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.4989068508148193,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.021699826058466,
+          "median_ms": 3.1304583535529673,
+          "min_ms": 1.5493333339691162,
+          "max_ms": 6.245875032618642
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.983808336934696,
+          "median_ms": 4.907812486635521,
+          "min_ms": 4.573791695293039,
+          "max_ms": 6.245875032618642
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.171722221265857,
+          "median_ms": 3.966249991208315,
+          "min_ms": 3.8632083451375365,
+          "max_ms": 5.43750001816079
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.668655901933865,
+          "median_ms": 1.6046458622440696,
+          "min_ms": 1.5493333339691162,
+          "max_ms": 2.397708361968398
+        },
+        "steady_equal_mean_ms": 2.920189061599861
+      },
+      {
+        "variant": "candidate-full",
+        "round": 4,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-full-r4",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012914.785801,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-full-r4/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-full-r4.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.7477402687072754,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.191996182635194,
+          "median_ms": 4.007999988971278,
+          "min_ms": 3.9176249993033707,
+          "max_ms": 5.391125043388456
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.494981945026666,
+          "median_ms": 4.37343749217689,
+          "min_ms": 4.266041680239141,
+          "max_ms": 5.391125043388456
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.148712502293555,
+          "median_ms": 3.9937708352226764,
+          "min_ms": 3.9176249993033707,
+          "max_ms": 5.149749980773777
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-full",
+        "round": 4,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-full-r4",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012916.535648,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-full-r4/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-full-r4.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.8246369361877441,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.331278644773799,
+          "median_ms": 4.104416642803699,
+          "min_ms": 3.908374987076968,
+          "max_ms": 6.081666622776538
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 5.0319277797825634,
+          "median_ms": 4.913208307698369,
+          "min_ms": 4.619249957613647,
+          "max_ms": 6.081666622776538
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.231185911201118,
+          "median_ms": 4.014354170067236,
+          "min_ms": 3.908374987076968,
+          "max_ms": 5.57487498736009
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-full",
+        "round": 5,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-full-r5",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012918.362035,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-full-r5/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-full-r5.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.828488826751709,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.296771703229751,
+          "median_ms": 4.0220208175014704,
+          "min_ms": 3.921333351172507,
+          "max_ms": 5.717541673220694
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 5.021204168830688,
+          "median_ms": 4.928479174850509,
+          "min_ms": 4.609249997884035,
+          "max_ms": 5.717541673220694
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.193281351001046,
+          "median_ms": 4.006437491625547,
+          "min_ms": 3.921333351172507,
+          "max_ms": 5.548499990254641
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "candidate-full",
+        "round": 5,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-full-r5",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012920.192297,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-full-r5/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-full-r5.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.743772029876709,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.2175291673629545,
+          "median_ms": 4.034479177789763,
+          "min_ms": 3.8884166860952973,
+          "max_ms": 5.207916663493961
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.529608337907121,
+          "median_ms": 4.410979163367301,
+          "min_ms": 4.2808749713003635,
+          "max_ms": 5.171416676603258
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.172946428713788,
+          "median_ms": 4.009312513517216,
+          "min_ms": 3.8884166860952973,
+          "max_ms": 5.207916663493961
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-lite",
+        "round": 5,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-lite-r5",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012921.9382799,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-lite-r5/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-lite-r5.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.471344232559204,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 2.9853597210603766,
+          "median_ms": 3.1035624851938337,
+          "min_ms": 1.5559166786260903,
+          "max_ms": 5.865374987479299
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.86468889284879,
+          "median_ms": 4.717666655778885,
+          "min_ms": 4.573541635181755,
+          "max_ms": 5.865374987479299
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.107444441696215,
+          "median_ms": 3.961124981287867,
+          "min_ms": 3.876624978147447,
+          "max_ms": 5.0728750065900385
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.6739638876363945,
+          "median_ms": 1.6079791821539402,
+          "min_ms": 1.5559166786260903,
+          "max_ms": 2.3304999922402203
+        },
+        "steady_equal_mean_ms": 2.8907041646663045
+      },
+      {
+        "variant": "candidate-lite",
+        "round": 5,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-lite-r5",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012923.411508,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-lite-r5/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-lite-r5.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.5156500339508057,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.0042651043913793,
+          "median_ms": 3.2996458176057786,
+          "min_ms": 1.550625020172447,
+          "max_ms": 5.643208336550742
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.638748610159382,
+          "median_ms": 4.415583331137896,
+          "min_ms": 4.233083280269057,
+          "max_ms": 5.643208336550742
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.19186990798658,
+          "median_ms": 3.9658125024288893,
+          "min_ms": 3.8814166327938437,
+          "max_ms": 5.411999998614192
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.7049406252529782,
+          "median_ms": 1.6156041820067912,
+          "min_ms": 1.550625020172447,
+          "max_ms": 2.7178750024177134
+        },
+        "steady_equal_mean_ms": 2.948405266619779
+      },
+      {
+        "variant": "candidate-lite",
+        "round": 6,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-lite-r6",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012924.9294028,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-lite-r6/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-lite-r6.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.60007905960083,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.0705052112656026,
+          "median_ms": 3.19537497125566,
+          "min_ms": 1.5635416493751109,
+          "max_ms": 5.8047083439305425
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.710295831318945,
+          "median_ms": 4.623791668564081,
+          "min_ms": 4.267250013072044,
+          "max_ms": 5.8047083439305425
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.304763430910599,
+          "median_ms": 4.268312477506697,
+          "min_ms": 3.90249997144565,
+          "max_ms": 5.481000000145286
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.7348638915185195,
+          "median_ms": 1.6170833259820938,
+          "min_ms": 1.5635416493751109,
+          "max_ms": 2.4882499710656703
+        },
+        "steady_equal_mean_ms": 3.019813661214559
+      },
+      {
+        "variant": "baseline-lite",
+        "round": 6,
+        "profile": "lossy",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-lite-r6",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012926.5333362,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-lite-r6/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-lite-r6.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.527632713317871,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 3.064536632155068,
+          "median_ms": 3.308000013930723,
+          "min_ms": 1.5370833571068943,
+          "max_ms": 6.214833352714777
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 5.006173606185864,
+          "median_ms": 4.799333342816681,
+          "min_ms": 4.603166657034308,
+          "max_ms": 6.214833352714777
+        },
+        "full": {
+          "count": 90,
+          "mean_ms": 4.220113425981253,
+          "median_ms": 3.996979183284566,
+          "min_ms": 3.863500023726374,
+          "max_ms": 5.398083361797035
+        },
+        "reuse": {
+          "count": 120,
+          "mean_ms": 1.7124447932777305,
+          "median_ms": 1.6184374981094152,
+          "min_ms": 1.5370833571068943,
+          "max_ms": 2.7525000041350722
+        },
+        "steady_equal_mean_ms": 2.966279109629492
+      },
+      {
+        "variant": "candidate-full",
+        "round": 6,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/candidate-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/candidate-root",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/candidate-full-r6",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/candidate-root",
+        "started_unix": 1792012928.062891,
+        "binary_sha256": "be247fe08a64b5d808c8e7ccf3a88e7e16b6a9b2f4b5d32ebc29ce43fae49131",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/candidate-full-r6/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/candidate-full-r6.log",
+        "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+        "wall_seconds": 1.857248067855835,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.336082292381131,
+          "median_ms": 4.24029168789275,
+          "min_ms": 3.9056666428223252,
+          "max_ms": 5.823374958708882
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.759173607453704,
+          "median_ms": 4.725479142507538,
+          "min_ms": 4.302666638977826,
+          "max_ms": 5.823374958708882
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.275640675942192,
+          "median_ms": 4.099083365872502,
+          "min_ms": 3.9056666428223252,
+          "max_ms": 5.605583370197564
+        },
+        "reuse": {
+          "count": 0
+        }
+      },
+      {
+        "variant": "baseline-full",
+        "round": 6,
+        "profile": "exact-fast",
+        "command": [
+          "build/target-ms-20261014/baseline-root/tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          "build/target-ms-20261014/baseline-root",
+          "--builddir",
+          "build/target-ms-20261014/baseline-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-benchmark/baseline-full-r6",
+          "--bench",
+          "30"
+        ],
+        "cwd": "build/target-ms-20261014/baseline-root",
+        "started_unix": 1792012929.922681,
+        "binary_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+        "power": "Battery Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 0\n networkoversleep     0\n sleep                1\n lessbright           0\n tcpkeepalive         1\n disksleep            10\nAC Power:\n Sleep On Power Button 1\n lowpowermode         0\n standby              1\n ttyskeepawake        1\n hibernatemode        3\n powernap             1\n hibernatefile        /var/vm/sleepimage\n displaysleep         10\n womp                 1\n networkoversleep     0\n sleep                1\n tcpkeepalive         1\n disksleep            10",
+        "run_json": "build/target-ms-20261014/final-benchmark/baseline-full-r6/run.json",
+        "log": "build/target-ms-20261014/final-benchmark/baseline-full-r6.log",
+        "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+        "wall_seconds": 1.8434560298919678,
+        "returncode": 0,
+        "device": "Apple M5",
+        "all": {
+          "count": 240,
+          "mean_ms": 4.301883854350308,
+          "median_ms": 4.046854184707627,
+          "min_ms": 3.922041621990502,
+          "max_ms": 6.246541626751423
+        },
+        "reset": {
+          "count": 30,
+          "mean_ms": 4.973031939395393,
+          "median_ms": 4.716374998679385,
+          "min_ms": 4.6362499706447124,
+          "max_ms": 6.246541626751423
+        },
+        "full": {
+          "count": 210,
+          "mean_ms": 4.2060055564867245,
+          "median_ms": 4.021374974399805,
+          "min_ms": 3.922041621990502,
+          "max_ms": 5.563208367675543
+        },
+        "reuse": {
+          "count": 0
+        }
+      }
+    ],
+    "production_note": "The six-round benchmark measures the saved candidate. The final production version adds a CPU-only cache selection fix; GPU sources/encoding are unchanged. The final binary was rebuilt and 24 production frames were compared byte-for-byte, not re-benchmarked."
+  },
+  "sources": {
+    "baseline": {
+      "source_hash": "c6df02b29f184345293ca21522f299b31812708d8e0538c6e209d36f9348b876",
+      "files": {
+        "src/fsr411_runtime.h": "31fa0ca888dc1b9ce96a6503614237d49dc366173df491f5a9417ee62c584af6",
+        "src/fsr411_cli.mm": "5e3ccd7a284dfc7d0cd5306cba89efb6d105376c4b6ad7ca82dea49ff742abce",
+        "src/fsr411_model.h": "d3d76789038d73e4032a38385ef7d8a309648ea4b2b378f291747658b4524131",
+        "src/fsr411_mpp.metal": "26ab3be3cf7f72cf855c40ad3ebf8ac3b2ade3fd2e412b598fc0ba9fc9546449",
+        "tools/compile_fsr411.py": "2b6924a493e7a80af1f68f244a5c217ce49a433fb512c6dbb09d3f91edaed583",
+        "tools/fsr411/lossy_shaders.py": "ecb85ad008c9671a9cdbe8ca7c8ca2dd8514a21bbdf9637448f5fa1aa58255d6",
+        "tools/fsr411/post_optimization.py": "b6854ede5fefd064396fbc46da15a14ce63d7bf3c6608767d6c10321cfb6386b"
+      }
+    },
+    "candidate": {
+      "source_hash": "ac955b6df0a29308a466ea23893c114a258dce8602dd9c6fc6a82ceec6541449",
+      "files": {
+        "src/fsr411_runtime.h": "3a94d3128aac80990124408a0efa4bcdc0b9b6c3aa29ed749550a7a63072b318",
+        "src/fsr411_cli.mm": "6ff66c87bb8a706edef1839d16f6c488b09daa758a30c76de58ea0e3edff6be1",
+        "src/fsr411_model.h": "d3d76789038d73e4032a38385ef7d8a309648ea4b2b378f291747658b4524131",
+        "src/fsr411_mpp.metal": "26ab3be3cf7f72cf855c40ad3ebf8ac3b2ade3fd2e412b598fc0ba9fc9546449",
+        "tools/compile_fsr411.py": "3efb12e203a13e5f2707aa7f3253d98512938617660aab46c22910bc34e435d6",
+        "tools/fsr411/lossy_shaders.py": "ecb85ad008c9671a9cdbe8ca7c8ca2dd8514a21bbdf9637448f5fa1aa58255d6",
+        "tools/fsr411/post_optimization.py": "b6854ede5fefd064396fbc46da15a14ce63d7bf3c6608767d6c10321cfb6386b",
+        "src/fsr411_scratch_layout.h": "771f8806e4cbfc2edeb2df0123f8448ce22692b19a159ccf9c7f89ff0adf93c7",
+        "tools/fsr411/scratch_alias.py": "298a3f56ab7f62292e2679252c043b10e25f0827cc5948d9b82925e4eeb01130"
+      }
+    },
+    "production": {
+      "source_hash": "242af91a1a7bd5203a16396e85123a9a052e1c95f704b4fc787aaa15ea978f77",
+      "digest_method": "SHA-256 of json.dumps(per-file SHA-256 map, sort_keys=True), UTF-8",
+      "files": {
+        "src/fsr411_runtime.h": "9bcad391fe7d70bbff09f900e5bb50ce367da6c328a424951ff79deb55c7f2c2",
+        "src/fsr411_cli.mm": "6ff66c87bb8a706edef1839d16f6c488b09daa758a30c76de58ea0e3edff6be1",
+        "src/fsr411_model.h": "d3d76789038d73e4032a38385ef7d8a309648ea4b2b378f291747658b4524131",
+        "src/fsr411_mpp.metal": "26ab3be3cf7f72cf855c40ad3ebf8ac3b2ade3fd2e412b598fc0ba9fc9546449",
+        "tools/compile_fsr411.py": "3efb12e203a13e5f2707aa7f3253d98512938617660aab46c22910bc34e435d6",
+        "tools/fsr411/lossy_shaders.py": "ecb85ad008c9671a9cdbe8ca7c8ca2dd8514a21bbdf9637448f5fa1aa58255d6",
+        "tools/fsr411/post_optimization.py": "b6854ede5fefd064396fbc46da15a14ce63d7bf3c6608767d6c10321cfb6386b",
+        "src/fsr411_scratch_layout.h": "771f8806e4cbfc2edeb2df0123f8448ce22692b19a159ccf9c7f89ff0adf93c7",
+        "tools/fsr411/scratch_alias.py": "298a3f56ab7f62292e2679252c043b10e25f0827cc5948d9b82925e4eeb01130",
+        "Makefile": "5aeaaca81e97e855b672f25664cd11c2175acfba6b0ab4d9eb6e876c2f5daaf1",
+        "tests/fsr411_runtime_test.mm": "5640a1bacbe7898a4fac3209fc97bf0cdf3bcaf1bc27b7cd4006656d4d0ff4ac",
+        "tests/fsr411_cache_fallback_test.mm": "dffac1fe1f041c5d01aa27c7392d517eb461f53b583172a04ffdab4fef288fbb",
+        "tests/fsr411_reset_clear_test.mm": "79c97683188eac1aa5961f307b3ec894f983e838e84be80c0dd3815ff03097cd",
+        "tests/fsr411_scratch_layout_test.cpp": "4de0938d5cb79213bdb02daa937d533c7b9e02f308a65fa797f6c774659b7fa2",
+        "tests/test_fsr411_reset_clear.py": "26f847f3171a7d0ee8653a42f8814c9011c96bd6e58ccd53aee0892e81ac5fe4",
+        "tools/fsr411/test_scratch_alias.py": "122cc90d4dd55a21cad90421e40eacd09488b6e0013f7a292a31f00cd0fa5cbc",
+        "tools/bench/benchmark_fsr411.py": "7532ff0ebad42b0b40ac802f27b6fc7eaa89f8ad3b6eb82bcde66dcdfca70ba0"
+      },
+      "binaries": {
+        "tools/bin/fsr4mac": "95b52342502683f2f4c40d5896add070e0b930c5ded4fc9f9864076c8e450676",
+        "dist/crossover/libfsr4hook.dylib": "f61710dfaff86ce9ed25ee8c8d2c1fabb6027ae62576b6759a2dc93c7c6114ae"
+      },
+      "post_benchmark_runtime_change": "Host-only completeness check for alias cache and early loaded-session reuse; GPU encoding/shaders unchanged",
+      "measured_core_files_differing": [
+        "src/fsr411_runtime.h"
+      ],
+      "local_post_benchmark_patch": "build/target-ms-20261014/final-host-cache.patch",
+      "post_benchmark_patch_sha256": "5cf58970d6335c9493aba3904262c5b4c5565e117d59b049e717aab8e94caafe",
+      "context": "Local benchmark workspace after cache-loader fix. See release_port for the published public-main build."
+    }
+  },
+  "quality": [
+    {
+      "profile": "lossy",
+      "capture": "1791590789976-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "d35b51c295d8d017f0a69a51bd0df23e873d0d71ef51096a88e82504b95f7345"
+    },
+    {
+      "profile": "lossy",
+      "capture": "1791590799393-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "d6220b92d5935dd818fc7661d462f0e076949706d079958777a88ee1f950140a"
+    },
+    {
+      "profile": "lossy",
+      "capture": "1791590804458-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "f03013af8139fc941f144477d4fe9b0b5d121ee6935bea83ed650776c643bcc1"
+    },
+    {
+      "profile": "lossy",
+      "capture": "1791590816258-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "8479857f797e4b9f85ac8affa6931fd8232d4972adaad371f7da1d53e23ff2af"
+    },
+    {
+      "profile": "exact-fast",
+      "capture": "1791590789976-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "d35b51c295d8d017f0a69a51bd0df23e873d0d71ef51096a88e82504b95f7345"
+    },
+    {
+      "profile": "exact-fast",
+      "capture": "1791590799393-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "d6220b92d5935dd818fc7661d462f0e076949706d079958777a88ee1f950140a"
+    },
+    {
+      "profile": "exact-fast",
+      "capture": "1791590804458-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "f03013af8139fc941f144477d4fe9b0b5d121ee6935bea83ed650776c643bcc1"
+    },
+    {
+      "profile": "exact-fast",
+      "capture": "1791590816258-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "8479857f797e4b9f85ac8affa6931fd8232d4972adaad371f7da1d53e23ff2af"
+    },
+    {
+      "profile": "exact",
+      "capture": "1791590789976-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "d35b51c295d8d017f0a69a51bd0df23e873d0d71ef51096a88e82504b95f7345"
+    },
+    {
+      "profile": "exact",
+      "capture": "1791590799393-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "d6220b92d5935dd818fc7661d462f0e076949706d079958777a88ee1f950140a"
+    },
+    {
+      "profile": "exact",
+      "capture": "1791590804458-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "f03013af8139fc941f144477d4fe9b0b5d121ee6935bea83ed650776c643bcc1"
+    },
+    {
+      "profile": "exact",
+      "capture": "1791590816258-62446",
+      "frames": 8,
+      "byte_identical": 8,
+      "same_schedule": true,
+      "scratch_layout": {
+        "allocated_bytes": 83232256,
+        "arena_bytes": 83232256,
+        "bytes": 33177600,
+        "cache_valid_for_captured_stages": [],
+        "captured_stages": [],
+        "inference_reused": false,
+        "offset": 33273856,
+        "policy": "alias_after_pass12_v1",
+        "preserves_neural_intermediates_after_post": false,
+        "row_stride": 30720,
+        "schema_version": 1,
+        "source_plane_bytes": 33273664,
+        "valid_after": "post_cnb",
+        "whole_raw_arena_comparable_to_legacy": false
+      },
+      "input_meta_sha256": "8479857f797e4b9f85ac8affa6931fd8232d4972adaad371f7da1d53e23ff2af"
+    }
+  ],
+  "input_sha256": {
+    "1791590789976-62446": {
+      "f00_color.bin": "5dabbe49b7febcc32f7b30fb5427199bd9096335b7d29a50798a7ebed63c56be",
+      "f00_depth.bin": "267433ade05685581bc2bd4e984ca8a6df87f0152a2504464ad8ea94de1e0428",
+      "f00_mv.bin": "8dcb32b82bfcfc112f56ea24bb56d91083758e14b3244506418758580c71d0ba",
+      "f01_color.bin": "ec8b9313a728711f5053202380e8662bf4624a8e19930a041ca3d6545850d7a1",
+      "f01_depth.bin": "3e07c80b96490043eb2c325e5b6062c3527cce475809ad29b329bf2e1f6b2ae3",
+      "f01_mv.bin": "183067f0cdc8d09c6b7a7b2848e60b96cfff57b3ba7808caf1981e5e8f943a2f",
+      "f02_color.bin": "6bfa04e8fe3203b3a0a20dc35475543b572663bdf1fcc915efa92a5e76e754d6",
+      "f02_depth.bin": "dd0478b29592b3143ba96fcc841b33c7d9def3dccfb8e82ad07b4d16861c19a4",
+      "f02_mv.bin": "85454b13cc4c539f4d2f36d0b53def78e00bb2900d196b8cec19fd55b1cdf9ec",
+      "f03_color.bin": "f5212e1ad68cd9a741fe2d298f93a1ac73178f4a6719478b62dc8ed40115e5c2",
+      "f03_depth.bin": "8e580a75ed748b62262627e0ef5811292afa878064f4d86ffc218882b2225af6",
+      "f03_mv.bin": "237af43f2f08d844ba41524a00cba88152f178025995f8e3b3fbeeca41c6aaef",
+      "f04_color.bin": "b5b5c6d34cdcccf4a6240523aa139b12f525e39ab43e2b6d6aca9655ea0bd5a8",
+      "f04_depth.bin": "98f97dcfc8232f925ce050b14d607b8be2def784620e0284b50a407668e1915b",
+      "f04_mv.bin": "6d0043ca5968b4b5ca50cd2e14e6fa3c879a03727f91bea4ff707351bd9f7259",
+      "f05_color.bin": "6fedf2bd7c8daecf7534b04b6492f8d932ab21b0eba982b3179eaf5257015069",
+      "f05_depth.bin": "7ec47587014cd968550804c5df29694f5d9667e86442ea9efffbd44ff1986ad9",
+      "f05_mv.bin": "556db7738ffb50ba7a89f069d96b1c7d03951d7d0fc7f05abb09b9134ce31a70",
+      "f06_color.bin": "f30ff7a2089507135ba1261cd67b0a2baec9c87a791c0912963bb461cd92288d",
+      "f06_depth.bin": "c6acd4f3ff0a17f25110279e770a4bc1f4bd1a32802e701744a187e03ce026c2",
+      "f06_mv.bin": "35096389a455d51da6ea37728b38fe1c5eafcfeeedc0a92e4816208f37b44da0",
+      "f07_color.bin": "1e14b7b4332b010d878a35758ee74677f399db9466812eb8359fa7f1dc62d1b0",
+      "f07_depth.bin": "3a337f59e54a6eb0b9f259923db749628838d7db9d5c435552706c2212da4863",
+      "f07_mv.bin": "3bd9293c3dec31719d8fdd641ae4ed4735ebf3f5a65c101afa80feb32f8e9e44",
+      "meta.json": "d35b51c295d8d017f0a69a51bd0df23e873d0d71ef51096a88e82504b95f7345"
+    },
+    "1791590799393-62446": {
+      "f00_color.bin": "62c3cad9e87e9d8b5c16ff3e4aca15a7bd08beecbac5d589a7403739818677c5",
+      "f00_depth.bin": "262282c8d6955a967246f26855474ca53bfdff952f519a90ffdc009832566158",
+      "f00_mv.bin": "664562cd167ff8bee7d5b4a831fb1525dee155d67912284e5ec4c97ad7bca2ae",
+      "f01_color.bin": "80c855823e78003df9929a2ddc96deb85dd7fc2cbd206bede5bcc544c3f48e96",
+      "f01_depth.bin": "f72b6af0e08886a678d902fb789e72711f34da7a6ee03c4ea76f900e086f85c0",
+      "f01_mv.bin": "baca7019776b8fbafacbb2d1429213275a78577e4b85fa46880aa67fa0c2016a",
+      "f02_color.bin": "ce3850b228246bdc5d04fefdac6a324cc3c472c4729e8ef751ee6f4a19963ada",
+      "f02_depth.bin": "caeecc8835fa00e95088b809812c0b7e73b7859babe52ec0fa149bbcb12cce16",
+      "f02_mv.bin": "1dd2cbbeb40e677112a9014fd9375227846ad204a2e01e1a0a5097af8cca5a15",
+      "f03_color.bin": "51cbb6a1344dea2cd5eb7e634943c0e6e3cfd73afff923c4225d0bd5757a5790",
+      "f03_depth.bin": "5e83f175b4d0d976168c20c4cb128799eeced1bda8bc63a9203cd2ec2a46295c",
+      "f03_mv.bin": "83bc59fc4506ff783033dcf5f52124889fb2e77127ec04a25cf01aae52593968",
+      "f04_color.bin": "7911d578d38371b91b5a0d34969253387173c29c44253bdab94455dac3969393",
+      "f04_depth.bin": "b99533d4515f4de8e59d18543ac2c4212b5de70cf1d37d8a8f0f9faeca377667",
+      "f04_mv.bin": "914566db4f0a4a315978ab163bc6f60abf511370ef69afdb27310c0c2eb50c27",
+      "f05_color.bin": "487c151b834e0d1210470ea9d17bc76ed80f49c34018790762fc4e21d27c45cd",
+      "f05_depth.bin": "d5739bee71df58d85382cdf345d46a2432f8ae79ddc5c78ce91e35630a6881f5",
+      "f05_mv.bin": "88608da43f837651c1e570dd71ac876ad1220e1eaf1e7336744cda1091db201e",
+      "f06_color.bin": "8bea38549cf88d149ba3d689f87ac684bd5ec187d7d81e294e9501957badeb4c",
+      "f06_depth.bin": "cf8eb18b0b385b02cb113bb626815eb5084d1f318aa30c559be36d6647a1e3a6",
+      "f06_mv.bin": "880f6fd8a58bb3becc0c5d5875c5e1dec0c5fb3f089f2008b12ec70e33121e38",
+      "f07_color.bin": "7890cd91872a7a8b0eae666e58913435227d9b712a34a24304bfa05c52c0ad07",
+      "f07_depth.bin": "50a118fce57c39dcd4d1f444a5cf2cb30ead52bcb60a25ab59500d5e23dde1f7",
+      "f07_mv.bin": "d937d105dd6df223b5d41b086d0f652cc9a32b5ae5ea2319c82cf401fb95fe59",
+      "meta.json": "d6220b92d5935dd818fc7661d462f0e076949706d079958777a88ee1f950140a"
+    },
+    "1791590804458-62446": {
+      "f00_color.bin": "d96f0f6a64a04cee786cdddd0437314d12af55ac9a7a6e2c8ed473c30ba60698",
+      "f00_depth.bin": "5ac0a8dadb1b53083cc982252a71059fa06bdd470f425309d473133c39c9dd43",
+      "f00_mv.bin": "ec0be0f3978f5bb6702e2e7810944a2164b4b8474335b3e211d8b08baef4fcf7",
+      "f01_color.bin": "14eac7f76a8a893eb7645f1bbbbdc61d0382609bb653a308748a8fc21eee4e2a",
+      "f01_depth.bin": "7a4601951f2ccde2a290ee49515b56156262a388ba9c5762f722f48b583ad90c",
+      "f01_mv.bin": "05e80f8aacc2f0a241815edfbbf41ef6c0cc015247a9107f3a91b6f701c17a44",
+      "f02_color.bin": "2d3fe4cc3e569531194c1fe417dddf85b59527b167a67bd369bc8cf23493df39",
+      "f02_depth.bin": "e5fce07dd40ecba04ccc3c4df270a590b56cc7030862cb4e5be43892017d6e60",
+      "f02_mv.bin": "c81a765e6d50d01071c5f734e5a46264f8fa0bae0eb4d1ecbaedae545d8be9d0",
+      "f03_color.bin": "6f78024686de79a1dd6b7ba1850444f228786a768b38c72dd23ac487ce881d23",
+      "f03_depth.bin": "875ca5e349136160695ba1e57fed6c044c362b2983e38fb4ef5c0ccf42b3dee6",
+      "f03_mv.bin": "0917f3e47678f24b87e9fa0e6aced8563995dfa0d601b9ebc3bc5e119dd6a5c6",
+      "f04_color.bin": "3d66a1ac2a9e2136e1244fdc841cd9af291e078e6a53b271c201ce9d15088579",
+      "f04_depth.bin": "f63bc52bc7962e5ab77a14881d137e686785a841ba8bfad19ffd646407f52756",
+      "f04_mv.bin": "b762e6aa176d4a41f6909d82829f5d23b5ee6f239a8cd0fe5371a6fcfcb53cf1",
+      "f05_color.bin": "6b2f61db58371bbfbd7540393907d650e2e197e27a3c00bedb703d9a783127c0",
+      "f05_depth.bin": "142198e7590ed4732fe6125e690b2e1c362702dd9bd1c912c2e2225f28d16519",
+      "f05_mv.bin": "50eaffb63afbf2994be9a8ad9161c826c4e24d9234471a4c540cdf9d799d664b",
+      "f06_color.bin": "cc1d7659c8149b971b1184e7c0dc01796d38517b045129e34e1772a2f7015ce6",
+      "f06_depth.bin": "2f0042ae697037f8d9359f13f432ed9ddce788a964539ae3d2da3307c6d0af6e",
+      "f06_mv.bin": "050b4ed0eb9d26debe1adbaab0829c9a4f3446797651c427eb40815146921390",
+      "f07_color.bin": "2bec46c30cf2d54ec0106764db54a4b36e97e0d25fd1e210b6bc8b51e830c65a",
+      "f07_depth.bin": "ff1778a42bbdd906668d4bae5626d98d13a20abc0a9a3e29825fe46baee7968e",
+      "f07_mv.bin": "1c3b91058832e39943491af6ff649edb386c41766186b0bd125a0c45014e2a7c",
+      "meta.json": "f03013af8139fc941f144477d4fe9b0b5d121ee6935bea83ed650776c643bcc1"
+    },
+    "1791590816258-62446": {
+      "f00_color.bin": "fde338e699681ad2a307c618018ee02acbcaffca72efbea2e96facab05cef358",
+      "f00_depth.bin": "aca6509cc97e00981a0333adc6f446107ffa2de88303fe37eaa77f4d1e7f02c1",
+      "f00_mv.bin": "cfc9cd050b68d0df063f212f5e63eb0b9d16c01f0b79ae4b738e95a2568c2063",
+      "f01_color.bin": "5e31047daa8d09d5129b29c999f3be2fd7ed791fdf53393d5e874740e64cf7c9",
+      "f01_depth.bin": "845f62a1a8720402902bcc322e7359a46ff532e32b00894cbfb281a0e1ae6ee5",
+      "f01_mv.bin": "a28b08d8ec79abda49ad61d6e8572b7f3a01c131156960b712631592c19ed8ad",
+      "f02_color.bin": "1cf59eadb30b59aa70d1950ec87ef55854367fb3ae10c8b424c024db8c737450",
+      "f02_depth.bin": "d1b0caf3d37b041aacf8ea1b96afa295ea1b1129ca246e933c996d4b362ed09d",
+      "f02_mv.bin": "8daaaf3e6ad87737b93e0bc425bd1a2b99721eac41a376374e3adfb33db7f5f9",
+      "f03_color.bin": "46201976c83dce41bba1d64bf89779a30a94462350ed0238fc4a2a513fb11ceb",
+      "f03_depth.bin": "f488bcb77f68b6825ecf57bbf5e881344754ba0a24e81a4bbb48bd177ea1bf02",
+      "f03_mv.bin": "b4e38715e8c52f1a235665fba5f780c3dc4df990e4d8b98c13b0924be6f38581",
+      "f04_color.bin": "471f77b276edee275f09178b6793a5a1cfd07ad67e59c263766586fbbd04d006",
+      "f04_depth.bin": "08b2c461ee8d96f53ae82690a8c68718e43b1d8624537d7780b094a1f6382587",
+      "f04_mv.bin": "8907ed30518452052d4d6d35cdf1de03d6a9a06727fb9392a566776a8a526bf2",
+      "f05_color.bin": "1cc8ed6be10b81c2d0ea88585e2f9003ce4a7a3838a2cdacc43fdbf3dd60e892",
+      "f05_depth.bin": "6c274276ee3e3632c29267e33547d8acd4418764b912efbc68f0e429d5dc54af",
+      "f05_mv.bin": "cb9522b7b50bc2ca3e713dc8a96be099230a1ad44705272aee6aba6354d9d4b0",
+      "f06_color.bin": "03b5f9290c237194c56d394be62e7e656e9a90538e801eb190001393aec1906e",
+      "f06_depth.bin": "c0e275c80d82817d414378a8b29a4b82770db04fd63a41625a954afb8a7c4d3f",
+      "f06_mv.bin": "7f1669d0f1b3544b0875900d3aea6ccd0e30ad3dc5492903ab316f3325f771b9",
+      "f07_color.bin": "bcb1c68ea8508b1fe2c52a6aa6624041e800297cc9dccd74be361e5379451d39",
+      "f07_depth.bin": "51b51fda18eb40234afd4d7c199b2b1aca92319bf13132ad8a756364e83e752c",
+      "f07_mv.bin": "58f72d68b7e6f57d1fd65ad059be0ac299f6a277149341da59f42a219a542aeb",
+      "meta.json": "8479857f797e4b9f85ac8affa6931fd8232d4972adaad371f7da1d53e23ff2af"
+    }
+  },
+  "screening": {
+    "lite-ranking": {
+      "rounds": 3,
+      "sequences_per_round": 15,
+      "summary": {
+        "baseline": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.1791055536208055,
+          "round_mean_range_ms": [
+            3.1478156248340383,
+            3.610360069918291
+          ],
+          "reset_mean_ms": 5.4717722232453525,
+          "full_mean_ms": 4.348926846351889,
+          "reuse_mean_ms": 1.7598715300361316,
+          "steady_equal_mean_ms": 3.0543991881940102
+        },
+        "lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.1116072922789804,
+          "round_mean_range_ms": [
+            2.947551737209627,
+            3.113827777269762
+          ],
+          "reset_mean_ms": 5.317125007665406,
+          "full_mean_ms": 4.271543514914811,
+          "reuse_mean_ms": 1.6664083367989708,
+          "steady_equal_mean_ms": 2.9689759258568906
+        }
+      },
+      "local_results": "build/target-ms-20261014/lite-ranking/summary.json"
+    },
+    "screen": {
+      "rounds": 2,
+      "sequences_per_round": 10,
+      "summary": {
+        "baseline-full": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.276810156807187,
+          "round_mean_range_ms": [
+            4.192115108889993,
+            4.361505204724381
+          ],
+          "reset_mean_ms": 4.85481665818952,
+          "full_mean_ms": 4.194237799466854
+        },
+        "cnb-32x1": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.401940627212753,
+          "round_mean_range_ms": [
+            4.358612500800518,
+            4.445268753624987
+          ],
+          "reset_mean_ms": 5.13991666957736,
+          "full_mean_ms": 4.296515478303522
+        },
+        "cnb-16x1": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.582128644688055,
+          "round_mean_range_ms": [
+            4.5736729152849875,
+            4.590584374091122
+          ],
+          "reset_mean_ms": 5.259347913670354,
+          "full_mean_ms": 4.485383034833441
+        },
+        "cnb-64x1": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 6.153934114263393,
+          "round_mean_range_ms": [
+            5.261710417107679,
+            7.046157811419107
+          ],
+          "reset_mean_ms": 6.77220625220798,
+          "full_mean_ms": 6.065609523128452
+        },
+        "cnb-16x2": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.371039845136693,
+          "round_mean_range_ms": [
+            4.329620835051173,
+            4.412458855222212
+          ],
+          "reset_mean_ms": 4.933731257915497,
+          "full_mean_ms": 4.290655357596863
+        },
+        "cnb-8x4": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.490229165458004,
+          "round_mean_range_ms": [
+            4.460876039229333,
+            4.519582291686675
+          ],
+          "reset_mean_ms": 5.008929164614528,
+          "full_mean_ms": 4.4161291655785
+        },
+        "cnb-32x2": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 5.078444271202898,
+          "round_mean_range_ms": [
+            4.967060936905909,
+            5.189827605499886
+          ],
+          "reset_mean_ms": 5.633935407968238,
+          "full_mean_ms": 4.9990883945221345
+        },
+        "nf64": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.784879947328591,
+          "round_mean_range_ms": [
+            4.774078645277768,
+            4.795681249379413
+          ],
+          "reset_mean_ms": 5.421460414072499,
+          "full_mean_ms": 4.693939880650889
+        },
+        "compact-full": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.578736984694842,
+          "round_mean_range_ms": [
+            4.492111462604953,
+            4.6653625067847315
+          ],
+          "reset_mean_ms": 5.324327092966996,
+          "full_mean_ms": 4.472224112084534
+        },
+        "postweights-full": {
+          "profile": "exact-fast",
+          "rounds": 2,
+          "mean_ms": 4.498720054834848,
+          "round_mean_range_ms": [
+            4.352667710190872,
+            4.644772399478825
+          ],
+          "reset_mean_ms": 5.132595830946229,
+          "full_mean_ms": 4.408166372533222
+        },
+        "baseline-lite": {
+          "profile": "lossy",
+          "rounds": 2,
+          "mean_ms": 3.1470653622818645,
+          "round_mean_range_ms": [
+            3.0948124993301462,
+            3.199318225233583
+          ],
+          "reset_mean_ms": 5.183039588155225,
+          "full_mean_ms": 4.253482634279256,
+          "reuse_mean_ms": 1.8082588518154807,
+          "steady_equal_mean_ms": 3.0308707430473683
+        },
+        "split-lite": {
+          "profile": "lossy",
+          "rounds": 2,
+          "mean_ms": 3.4988887990039075,
+          "round_mean_range_ms": [
+            3.109306248370558,
+            3.888471349637257
+          ],
+          "reset_mean_ms": 5.20952707156539,
+          "full_mean_ms": 4.8633888897408415,
+          "reuse_mean_ms": 2.047854162810836,
+          "steady_equal_mean_ms": 3.4556215262758387
+        },
+        "compact-lite": {
+          "profile": "lossy",
+          "rounds": 2,
+          "mean_ms": 3.1396354192111176,
+          "round_mean_range_ms": [
+            3.0886989625287242,
+            3.190571875893511
+          ],
+          "reset_mean_ms": 5.23334167082794,
+          "full_mean_ms": 4.33887152854974,
+          "reuse_mean_ms": 1.7167817743029445,
+          "steady_equal_mean_ms": 3.0278266514263423
+        },
+        "postweights-lite": {
+          "profile": "lossy",
+          "rounds": 2,
+          "mean_ms": 3.1791450521268416,
+          "round_mean_range_ms": [
+            3.116853124811314,
+            3.241436979442369
+          ],
+          "reset_mean_ms": 5.190787502215244,
+          "full_mean_ms": 4.4374951365171,
+          "reuse_mean_ms": 1.7324718763120472,
+          "steady_equal_mean_ms": 3.0849835064145736
+        }
+      },
+      "local_results": "build/target-ms-20261014/screen/summary.json"
+    },
+    "screen2": {
+      "rounds": 3,
+      "sequences_per_round": 12,
+      "summary": {
+        "baseline-full": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 4.751739147347204,
+          "round_mean_range_ms": [
+            4.700340280275365,
+            4.898337677029001
+          ],
+          "reset_mean_ms": 5.481458332117957,
+          "full_mean_ms": 4.659159721562728
+        },
+        "nf32-32x1": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 5.215378471499814,
+          "round_mean_range_ms": [
+            5.199983506220936,
+            5.565559465442978
+          ],
+          "reset_mean_ms": 5.774138883377115,
+          "full_mean_ms": 5.117961309484339
+        },
+        "nf32-16x2": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 5.217609374691771,
+          "round_mean_range_ms": [
+            5.112562069067887,
+            5.669831594180626
+          ],
+          "reset_mean_ms": 6.830861117729607,
+          "full_mean_ms": 5.0759603216734135
+        },
+        "barrier-full": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 4.854115884882049,
+          "round_mean_range_ms": [
+            4.84056987928246,
+            5.028299908493257
+          ],
+          "reset_mean_ms": 5.660128469268481,
+          "full_mean_ms": 4.805745536162119
+        },
+        "reset-full": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 4.642243922110841,
+          "round_mean_range_ms": [
+            4.609920142077802,
+            4.709620658710871
+          ],
+          "reset_mean_ms": 4.868045138816039,
+          "full_mean_ms": 4.575225201690392
+        },
+        "baseline-lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.384874129551463,
+          "round_mean_range_ms": [
+            3.2784045191268283,
+            3.5179322846185337
+          ],
+          "reset_mean_ms": 5.2573923506618785,
+          "full_mean_ms": 4.713785881499967,
+          "reuse_mean_ms": 1.8152630267043908,
+          "steady_equal_mean_ms": 3.316923320906224
+        },
+        "barrier-lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.5101137139766556,
+          "round_mean_range_ms": [
+            3.2584635434128963,
+            3.5939756944571855
+          ],
+          "reset_mean_ms": 6.036586807264636,
+          "full_mean_ms": 4.634619211881525,
+          "reuse_mean_ms": 1.8991032957274,
+          "steady_equal_mean_ms": 3.2668612538044624
+        },
+        "reset-lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.3465008691564435,
+          "round_mean_range_ms": [
+            3.315491322306722,
+            3.4836401888848436
+          ],
+          "reset_mean_ms": 5.555951395460094,
+          "full_mean_ms": 4.689432866547981,
+          "reuse_mean_ms": 1.8884592039588217,
+          "steady_equal_mean_ms": 3.2814304088080664
+        }
+      },
+      "local_results": "build/target-ms-20261014/screen2/summary.json"
+    },
+    "screen3": {
+      "rounds": 3,
+      "sequences_per_round": 20,
+      "summary": {
+        "baseline-full": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 4.314204947513645,
+          "round_mean_range_ms": [
+            4.2945104141836055,
+            5.3164601584285265
+          ],
+          "reset_mean_ms": 4.987222910858691,
+          "full_mean_ms": 4.226124999279689
+        },
+        "pso-full": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 4.256004165290506,
+          "round_mean_range_ms": [
+            4.251589064733707,
+            4.355606769604492
+          ],
+          "reset_mean_ms": 5.001706242910586,
+          "full_mean_ms": 4.150254764161738
+        },
+        "sg2-full": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 4.3553132800298044,
+          "round_mean_range_ms": [
+            4.286119531388977,
+            4.3695630178262945
+          ],
+          "reset_mean_ms": 5.013737492845394,
+          "full_mean_ms": 4.257466068624386
+        },
+        "reset-full": {
+          "profile": "exact-fast",
+          "rounds": 3,
+          "mean_ms": 4.359990625380306,
+          "round_mean_range_ms": [
+            4.330554163243505,
+            4.381147917956696
+          ],
+          "reset_mean_ms": 4.9369083368219435,
+          "full_mean_ms": 4.282079463674953
+        },
+        "baseline-lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.036877343765809,
+          "round_mean_range_ms": [
+            3.034391925757518,
+            3.147180985979503
+          ],
+          "reset_mean_ms": 4.954739584354684,
+          "full_mean_ms": 4.197976389938655,
+          "reuse_mean_ms": 1.7096005205530673,
+          "steady_equal_mean_ms": 2.9537884552458613
+        },
+        "pso-lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.0895276027877117,
+          "round_mean_range_ms": [
+            3.0728119771083584,
+            3.1276742167392513
+          ],
+          "reset_mean_ms": 5.109272920526564,
+          "full_mean_ms": 4.1981791640864685,
+          "reuse_mean_ms": 1.7377109368680976,
+          "steady_equal_mean_ms": 2.967945050477283
+        },
+        "split-lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.087054952629842,
+          "round_mean_range_ms": [
+            3.083034375231364,
+            3.100851825729478
+          ],
+          "reset_mean_ms": 5.12191457382869,
+          "full_mean_ms": 4.2578576443096,
+          "reuse_mean_ms": 1.7057770855899435,
+          "steady_equal_mean_ms": 2.979837154634879
+        },
+        "reset-lite": {
+          "profile": "lossy",
+          "rounds": 3,
+          "mean_ms": 3.045782553817844,
+          "round_mean_range_ms": [
+            3.041631770247477,
+            3.095214843415306
+          ],
+          "reset_mean_ms": 4.879533336497843,
+          "full_mean_ms": 4.248567358202611,
+          "reuse_mean_ms": 1.7178796872030944,
+          "steady_equal_mean_ms": 2.9723872425771938
+        }
+      },
+      "local_results": "build/target-ms-20261014/screen3/summary.json"
+    }
+  },
+  "validation": {
+    "status": "passed",
+    "cpu_build": {
+      "command": [
+        "make",
+        "tools/bin/fsr4mac",
+        "test",
+        "build-fsr411-tests",
+        "build/tests/fsr411_snapshot_test",
+        "build/tests/fsr411_reset_clear_test"
+      ],
+      "exit_code": 0,
+      "log": "build/target-ms-20261014/final-cpu-build.log"
+    },
+    "gpu_suites_before_cache_selection_fix": [
+      {
+        "target": "test-fsr411-runtime",
+        "exit_code": 0,
+        "seconds": 47.366766929626465,
+        "log": "build/target-ms-20261014/test-fsr411-runtime.log"
+      },
+      {
+        "target": "test-fsr411-reset",
+        "exit_code": 0,
+        "seconds": 1.8769841194152832,
+        "log": "build/target-ms-20261014/test-fsr411-reset.log"
+      },
+      {
+        "target": "test-fsr411-snapshot",
+        "exit_code": 0,
+        "seconds": 0.4323709011077881,
+        "log": "build/target-ms-20261014/test-fsr411-snapshot.log"
+      },
+      {
+        "target": "test-fsr411-cadence",
+        "exit_code": 0,
+        "seconds": 4.595209836959839,
+        "log": "build/target-ms-20261014/test-fsr411-cadence.log"
+      },
+      {
+        "target": "test-fsr411-live",
+        "exit_code": 0,
+        "seconds": 12.790336847305298,
+        "log": "build/target-ms-20261014/test-fsr411-live.log"
+      },
+      {
+        "target": "test-fsr411-simd",
+        "exit_code": 0,
+        "seconds": 9.033522844314575,
+        "log": "build/target-ms-20261014/test-fsr411-simd.log"
+      },
+      {
+        "target": "test-fsr411-scalar",
+        "exit_code": 0,
+        "seconds": 2.621166944503784,
+        "log": "build/target-ms-20261014/test-fsr411-scalar.log"
+      },
+      {
+        "target": "test-fsr411-lossy",
+        "exit_code": 0,
+        "seconds": 2.72052001953125,
+        "log": "build/target-ms-20261014/test-fsr411-lossy.log"
+      },
+      {
+        "target": "test-fsr411-cli",
+        "exit_code": 0,
+        "seconds": 6.295427083969116,
+        "log": "build/target-ms-20261014/test-fsr411-cli.log"
+      },
+      {
+        "target": "test-fsr411-chroma",
+        "exit_code": 0,
+        "seconds": 0.8667099475860596,
+        "log": "build/target-ms-20261014/test-fsr411-chroma.log"
+      }
+    ],
+    "cpu_contract_tests": [
+      {
+        "command": [
+          "python3",
+          "tools/fsr411/test_scratch_alias.py"
+        ],
+        "tests": 3,
+        "exit_code": 0
+      },
+      {
+        "command": [
+          "python3",
+          "tests/test_fsr411_reset_clear.py"
+        ],
+        "tests": 4,
+        "exit_code": 0
+      }
+    ],
+    "benchmark_harness_dry_run": {
+      "command": [
+        "python3",
+        "tools/bench/benchmark_fsr411.py",
+        "build/target-ms-20261014/final-plan.json",
+        "build/target-ms-20261014/reproduced-benchmark",
+        "--rounds",
+        "1",
+        "--bench",
+        "1",
+        "--dry-run"
+      ],
+      "exit_code": 0
+    },
+    "gpu_execution": "All GPU benchmarks and test runs were serialized",
+    "cache_fallback_regression": {
+      "command": [
+        "make",
+        "test-fsr411-cache",
+        "test-fsr411-cache-gpu"
+      ],
+      "exit_code": 0,
+      "host_cases": 21,
+      "gpu_sequences": 6,
+      "gpu_frames_byte_identical": 18,
+      "complete_malformed_layout_rejected": true,
+      "log": "build/target-ms-20261014/cache-fallback-regression.log"
+    },
+    "post_cache_build_and_production_replay": [
+      {
+        "command": [
+          "make",
+          "tools/bin/fsr4mac",
+          "dist/crossover/libfsr4hook.dylib"
+        ],
+        "exit_code": 0,
+        "seconds": 5.205943083999999,
+        "log": "build/target-ms-20261014/post-cache-build.log"
+      },
+      {
+        "command": [
+          "tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          ".",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "lossy",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-production-replay/lossy"
+        ],
+        "profile": "lossy",
+        "capture": "1791590816258-62446",
+        "exit_code": 0,
+        "seconds": 4.981265375,
+        "log": "build/target-ms-20261014/final-production-replay/lossy.log",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "binary_sha256": "95b52342502683f2f4c40d5896add070e0b930c5ded4fc9f9864076c8e450676"
+      },
+      {
+        "command": [
+          "tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          ".",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact-fast",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-production-replay/exact-fast"
+        ],
+        "profile": "exact-fast",
+        "capture": "1791590816258-62446",
+        "exit_code": 0,
+        "seconds": 2.7644630830000008,
+        "log": "build/target-ms-20261014/final-production-replay/exact-fast.log",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "binary_sha256": "95b52342502683f2f4c40d5896add070e0b930c5ded4fc9f9864076c8e450676"
+      },
+      {
+        "command": [
+          "tools/bin/fsr4mac",
+          "--fsr-version",
+          "4.1.1",
+          "--root",
+          ".",
+          "--builddir",
+          "build/target-ms-20261014/candidate-cache",
+          "--no-compile",
+          "--i8mpp",
+          "--profile",
+          "exact",
+          "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+          "build/target-ms-20261014/final-production-replay/exact"
+        ],
+        "profile": "exact",
+        "capture": "1791590816258-62446",
+        "exit_code": 0,
+        "seconds": 1.0676820419999995,
+        "log": "build/target-ms-20261014/final-production-replay/exact.log",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "binary_sha256": "95b52342502683f2f4c40d5896add070e0b930c5ded4fc9f9864076c8e450676"
+      }
+    ],
+    "source_integrity_receipt": "build/target-ms-20261014/final-baseline-verification.json",
+    "git_diff_check": {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "HEAD"
+      ],
+      "exit_code": 0
+    },
+    "final_binaries_up_to_date": true
+  },
+  "source_integrity": {
+    "comparison": "Working tree snapshot taken before this task, preserving existing user edits",
+    "baseline_files_checked": 408,
+    "baseline_files_unchanged": 402,
+    "missing_baseline_files": [],
+    "old_fsr4_unchanged": true,
+    "old_fsr4_files_checked": 206,
+    "old_fsr4_content_digest": "ec00234cef4154036b982d72e6b50503b2993fb4775633f2605b24f561cc4fb8",
+    "digest_method": "SHA-256 of json.dumps(per-file SHA-256 map, sort_keys=True), UTF-8",
+    "preexisting_unrelated_diffs_preserved": [
+      "docs/STATE.md",
+      "src/bilin.cpp",
+      "src/bin2png.cpp",
+      "src/compare.cpp",
+      "src/fsr4_device.h",
+      "src/fsr4mac.mm",
+      "src/gen_testcase.cpp",
+      "src/i8mpp_host.h",
+      "src/pngio.h",
+      "tests/fsr411_lossy_test.mm",
+      "tests/run_fsr411_lossy.py",
+      "third_party/fsr411/README.md",
+      "tools/bench/i8_test.mm",
+      "tools/bench/mpp_bench.metal",
+      "tools/bench/mpp_bench.mm",
+      "tools/bench/mpp_bench2.metal",
+      "tools/bench/mpp_bench2.mm",
+      "tools/bench/mpp_diag.metal",
+      "tools/bench/mpp_diag.mm",
+      "tools/bin/gen_testcase",
+      "tools/fsr411/lossy_shaders.py",
+      "tools/fsr411/test_lossy.py",
+      "tools/fsr411/test_post_optimization.py"
+    ],
+    "local_receipt": "build/target-ms-20261014/final-baseline-verification.json"
+  },
+  "release_port": {
+    "tag": "crossover-v1.7",
+    "base_commit": "3c086d5a8dbad57827c40aea58d618e23c6be551",
+    "repository": "UzenUPoZiTiV4ik/fsr4-native-macos",
+    "scope": "Only the memory/reset/cache delta is ported onto v1.6; existing public installer and SIMD/Winograd sources are preserved.",
+    "fsr4_sources_unchanged": true,
+    "gpu_shader_and_model_sources_unchanged_from_v16": true,
+    "source_validation_status": "passed",
+    "source_sha256": {
+      "src/fsr411_runtime.h": "3f9e13bc63cab0933484fc7dfff21a90f79b28239d4b202454568f03baf39529",
+      "src/fsr411_cli.mm": "6ff66c87bb8a706edef1839d16f6c488b09daa758a30c76de58ea0e3edff6be1",
+      "src/fsr411_scratch_layout.h": "771f8806e4cbfc2edeb2df0123f8448ce22692b19a159ccf9c7f89ff0adf93c7",
+      "src/fsr411_model.h": "d3d76789038d73e4032a38385ef7d8a309648ea4b2b378f291747658b4524131",
+      "src/fsr411_mpp.metal": "26ab3be3cf7f72cf855c40ad3ebf8ac3b2ade3fd2e412b598fc0ba9fc9546449",
+      "src/fsr411_simd.metal": "9d1fcb3cb7b0bdc865b05c691a8af0b04eb46e80d12cadf99e79e492b46fe481",
+      "tools/compile_fsr411.py": "3efb12e203a13e5f2707aa7f3253d98512938617660aab46c22910bc34e435d6",
+      "tools/gen_fsr411_native.py": "06710ec4ce0be5c0118b446229f43ff1d5587a22dd144a780584c4689db3531a",
+      "tools/fsr411/scratch_alias.py": "298a3f56ab7f62292e2679252c043b10e25f0827cc5948d9b82925e4eeb01130",
+      "tools/bin/fsr4mac": "4fb3855802c8a0a54743412f212cdd9ca130b1617ad6b28f58b92b547180edf4"
+    },
+    "checks": [
+      {
+        "command": [
+          "make",
+          "test",
+          "tools/bin/fsr4mac",
+          "build-fsr411-tests",
+          "build/tests/fsr411_snapshot_test",
+          "build/tests/fsr411_reset_clear_test"
+        ],
+        "exit_code": 0,
+        "seconds": 28.639348875,
+        "log": "local-release-validation/release-cpu-build.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-chroma"
+        ],
+        "exit_code": 0,
+        "seconds": 2.6944996669999997,
+        "log": "local-release-validation/test-fsr411-chroma.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-quantize"
+        ],
+        "exit_code": 0,
+        "seconds": 2.1768562500000006,
+        "log": "local-release-validation/test-fsr411-quantize.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-native"
+        ],
+        "exit_code": 0,
+        "seconds": 37.591411375,
+        "log": "local-release-validation/test-fsr411-native.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-runtime"
+        ],
+        "exit_code": 0,
+        "seconds": 33.265867541000006,
+        "log": "local-release-validation/test-fsr411-runtime.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-scalar"
+        ],
+        "exit_code": 0,
+        "seconds": 2.856785666999997,
+        "log": "local-release-validation/test-fsr411-scalar.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-simd"
+        ],
+        "exit_code": 0,
+        "seconds": 9.717042417000002,
+        "log": "local-release-validation/test-fsr411-simd.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-lossy"
+        ],
+        "exit_code": 0,
+        "seconds": 4.462322125,
+        "log": "local-release-validation/test-fsr411-lossy.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-autoexposure"
+        ],
+        "exit_code": 0,
+        "seconds": 1.3869492910000076,
+        "log": "local-release-validation/test-fsr411-autoexposure.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-cadence"
+        ],
+        "exit_code": 0,
+        "seconds": 4.881868792000006,
+        "log": "local-release-validation/test-fsr411-cadence.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-reset"
+        ],
+        "exit_code": 0,
+        "seconds": 3.632928791000012,
+        "log": "local-release-validation/test-fsr411-reset.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-cache-gpu"
+        ],
+        "exit_code": 0,
+        "seconds": 0.49125566700000434,
+        "log": "local-release-validation/test-fsr411-cache-gpu.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-live"
+        ],
+        "exit_code": 0,
+        "seconds": 11.577119582999998,
+        "log": "local-release-validation/test-fsr411-live.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-cli"
+        ],
+        "exit_code": 0,
+        "seconds": 6.735251250000005,
+        "log": "local-release-validation/test-fsr411-cli.log"
+      },
+      {
+        "command": [
+          "make",
+          "test-fsr411-snapshot"
+        ],
+        "exit_code": 0,
+        "seconds": 1.619576084000002,
+        "log": "local-release-validation/test-fsr411-snapshot.log"
+      }
+    ],
+    "image_replay": [
+      {
+        "profile": "lossy",
+        "capture": "1791590789976-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 4.684865583,
+        "sha256": {
+          "f00_out.bin": "cf20d08b0e0ba3f4cfdfe73b1789a82f1fe92e70e9c22aa7f84ea47d18948681",
+          "f01_out.bin": "c26951467d9878d38679e35bdb26b3da122d3256e74d69a908ba00779888227a",
+          "f02_out.bin": "02e416d443e3dd1868e6fd3994b8fe7925847e5f756672a2e5890e1ef0405002",
+          "f03_out.bin": "97f738432281c4f1874b965740a7992f273c6269c522b7ea00a888334ee4adaf",
+          "f04_out.bin": "32c9e83a8bd9f1d9bc97d18b634992d8518ede5b60c3c267b403e22d6bbf5935",
+          "f05_out.bin": "8965ada3f2f7a5518993de83e6fdb780975f3126c4a57b18eddfdd29ba811219",
+          "f06_out.bin": "90ed2a32cf2f4f9743028a5b8e0382ac3208c2f58e512a7334a55a80a19b174b",
+          "f07_out.bin": "ada26279deb65884686c78e923005037c2eed9bdedb5722679af186edb00179d"
+        },
+        "log": "local-release-validation/game-replay/lossy-1791590789976-62446.log"
+      },
+      {
+        "profile": "lossy",
+        "capture": "1791590799393-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 1.375193083,
+        "sha256": {
+          "f00_out.bin": "e076b561748ee1e426b09499c7adf101ecf1fc4cbe34d76653973951fdfedaf7",
+          "f01_out.bin": "169849e33cc4a12cbdd9240d262354f7269a69a369e156416301500c018e7c20",
+          "f02_out.bin": "308dfd7cc8aa82815b65d6277eec52b61ba22f9efb9ba87508dd958d3445398e",
+          "f03_out.bin": "6cac27c0fe4cd0c80ab8e99eb8f2c57b9b414590df7e323fd19b8d4c0dc23966",
+          "f04_out.bin": "caf056a0a0f89017d8cdb60fb70c793ba9d3c0b105d6778558a84edab3ab8086",
+          "f05_out.bin": "7dfb8e2ad884d4dd0aa0f3215906a60fd2cacff76c7d84a4e13ae5dc17af898a",
+          "f06_out.bin": "ebd4d2e14842999a8f0499e91f9dbf3bc55077fb4991387c616ecbe5cfb0ba3c",
+          "f07_out.bin": "c88fe0a3eaf6c456b02ad7138faee04a068f81d809ed6b7e7173fbe0cf917665"
+        },
+        "log": "local-release-validation/game-replay/lossy-1791590799393-62446.log"
+      },
+      {
+        "profile": "lossy",
+        "capture": "1791590804458-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 1.4702713749999994,
+        "sha256": {
+          "f00_out.bin": "aa1c506620e09b79276787734e30a5cf3cd47adabc84ffa17f1d6d618c7cbfac",
+          "f01_out.bin": "b2348a391ab7c0bc9c7ebad9bc102756065f459297d76961156503db9eee0c8d",
+          "f02_out.bin": "2ad97f5f740238f2c9314d4555dc6f5f767e0d4ebbba6ad189ab94dd6341d9a5",
+          "f03_out.bin": "6f7b0050969489c3ac5b27bd788606f3163112107005435964273f9b1ffa5684",
+          "f04_out.bin": "701c0e3cc9096f547696b7352e1550e07986e24a58816160da964a9152861b57",
+          "f05_out.bin": "9d4d6ef76fafdabb545781301601b56c65e120dc02ebb06ca7a00a853dad0b6d",
+          "f06_out.bin": "18d1f9a152371b6a0d9c8256c73668d6aca781ad621f473661cc0c7b80d6a147",
+          "f07_out.bin": "23611bf6a62be0efd427a2fc4df4bda984f891ca9ac4ca0aa82b3a81cba03bdb"
+        },
+        "log": "local-release-validation/game-replay/lossy-1791590804458-62446.log"
+      },
+      {
+        "profile": "lossy",
+        "capture": "1791590816258-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 0.9540852079999995,
+        "sha256": {
+          "f00_out.bin": "e227ce135818203291fed85e39771ea8b92513d330d963d5f170f455873aae18",
+          "f01_out.bin": "35b7098622809b4ea877b096c212fb83abd989f48cb0529bd1c8dce5505f1ef0",
+          "f02_out.bin": "b7c695ce0fbc659efbf0e4fb0b93704426806f6cb22c860082fe3346197ddcbb",
+          "f03_out.bin": "e2280027beaf9517541e032de4949c3dfdc85f8998d5b99054e82e52d8365f8c",
+          "f04_out.bin": "13e3359dca93acdb6bbbe5d959bb7f96df3e625769737df84aef24bfcd0f30b5",
+          "f05_out.bin": "e5dad4a308b34531a45966c5fcefba0200e851633e93ba49174e7b1db08718c0",
+          "f06_out.bin": "37492bee3c4b12f837a78f001276eb461570c08820aa067b5f82d84e74832d36",
+          "f07_out.bin": "9d001f4043b0b2ce398f138504e35d1bfa4ebc5710f477c62a38943d4a62e11e"
+        },
+        "log": "local-release-validation/game-replay/lossy-1791590816258-62446.log"
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590789976-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 3.068670708999999,
+        "sha256": {
+          "f00_out.bin": "dd75bed8e62c2a36e551015366b02b56fc56ce0b2a39056f8958881bb6d9960d",
+          "f01_out.bin": "c384e3d4bcd6a3ff07a41e8fb65a10ae7becc2ace82afa8491a8c81b2b00e858",
+          "f02_out.bin": "9a7888077af092060890ae2ab162f74ef0261415df33ad46712b168ba3bbb3fa",
+          "f03_out.bin": "96b5eb0babed5353773403187002c82564c7f214af4c64928945a97e06bc1d7d",
+          "f04_out.bin": "1fbe255171e1c64d37ee34ce3c27ec4eee80aaa35bb22e89eb58fb4699e8fbba",
+          "f05_out.bin": "fb7e75205fed49ee29f115b02f71d7219e8d04937e0dee211d31d558f519c570",
+          "f06_out.bin": "f036c0f42f27e5f199fa3cb0d99c89b2f10ab08aa6578f785c226da0dcfbd7b2",
+          "f07_out.bin": "11f290c30b7959295366ea956452d71eafa98ae15b99f7da645d1af03156ccd1"
+        },
+        "log": "local-release-validation/game-replay/exact-fast-1791590789976-62446.log"
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590799393-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 1.3769862909999997,
+        "sha256": {
+          "f00_out.bin": "ec885118759129626717ffb1d7ab72023edf0c648e980a8ef16028d70928152c",
+          "f01_out.bin": "dafa0add634c17bcf2e5fde61173bfa4206af63cdd19056aa44327810faf686e",
+          "f02_out.bin": "226c44f05dbc95dd560080bfc30721831e9c8238e3254762c106be74a4237541",
+          "f03_out.bin": "2dac7a8636768da59452a16c01640a43989de71c6016396269f1a6382f37eb5e",
+          "f04_out.bin": "1915618960640fe04b74fd5df91d089c9d1995063512e0afdcc629e80e48aa27",
+          "f05_out.bin": "76c77dfcea53559f6c4eae5cfaf119880b687ab92866c7d764fb0f5db9ddd0e0",
+          "f06_out.bin": "b4f8ab91fcf4f1738271666f7603143d1ee91974cf933411a50e3256d236e844",
+          "f07_out.bin": "66f2911dd9148b22cbde0344159bb4b81ec4bdac5152fbd1e463c079dfb1fb30"
+        },
+        "log": "local-release-validation/game-replay/exact-fast-1791590799393-62446.log"
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590804458-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 1.5091433330000008,
+        "sha256": {
+          "f00_out.bin": "91f0dce7c6ad123b6d1f479b3fe542a072b9f16c451684a00e918d774014a34b",
+          "f01_out.bin": "30e2b26188830b3adabeb0b6f3c1dc76c8f5abf04f75b6c576e3c7d90a361719",
+          "f02_out.bin": "1ab28e6999b91352b2a7f18292faf4a70bbc3830241ff5256f9e5e877887f2e1",
+          "f03_out.bin": "cab7c8c91c1a34cdae7376ba04959889c6d1ae4f268464fc26deeafe48a33c29",
+          "f04_out.bin": "ed08aac3a86c68a5ff1b744a6e4fa0f925d4b15c72d7fb24b83638742c1b0692",
+          "f05_out.bin": "87850891b17aa558976043f60216821f8b64d3a49abd8ba27993006195bcbe0d",
+          "f06_out.bin": "f2d51e420ab349768a800e26755ff8ce974b6f5b51c8c390375019bc799ad249",
+          "f07_out.bin": "c3a55828c16f42685bbf346dcf4b258a032aeb1140434325f430400597de7b7e"
+        },
+        "log": "local-release-validation/game-replay/exact-fast-1791590804458-62446.log"
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590816258-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 0.9623718330000006,
+        "sha256": {
+          "f00_out.bin": "cc01ab20e0980ef6a0d090b68c4f92969c78eabe8105d1a1b5cf9388fffa1115",
+          "f01_out.bin": "1515a6543d845a831bfe29b3b97cc49b7b458da2e6e0039ef3640212c7b400b8",
+          "f02_out.bin": "502a6aba2a6f7683a9e7a53be82a2da7830296fcc80f330fb961e22b95e9c271",
+          "f03_out.bin": "bfc2fbf7a8abe8585a2d43001e52fc185eb1237883526d3e01b9982a5db75e98",
+          "f04_out.bin": "43687c5750b212b854da3f87a69ea6409190df7696f1274ceb34314170f8052a",
+          "f05_out.bin": "6fea2a30031ccfac33edd9ba80715230524158667e3da53ae521d4273a6d8c00",
+          "f06_out.bin": "7a61021440dc6032fbd725ab75311dd973b3681810363b723f1db52dd0f601d4",
+          "f07_out.bin": "99ff5aa1a4cb56b4d9537ddd35e630d4b772a999c74932e70ca904a993ef06b6"
+        },
+        "log": "local-release-validation/game-replay/exact-fast-1791590816258-62446.log"
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590789976-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 1.4591049159999994,
+        "sha256": {
+          "f00_out.bin": "2caf067632b2afaf72892fdd5ff29195146b679651751319bb6e41a8f1c59250",
+          "f01_out.bin": "157d9577efaed853f5b9155802fe5ced392556cb99c2f534b0be79dbf3d99c79",
+          "f02_out.bin": "b9c917cc73c90411fbbaf02113f69c63fd0f9c9e9e23d4cf1996dffd1236367f",
+          "f03_out.bin": "045444b6892693a26dc98f052d79211671a6f4dcad76feec3d65b8b26b3504d8",
+          "f04_out.bin": "bf2dbad761d6f3532335b6bcb7291f98a81bfd5a26ab37ee0d2472699453e8e4",
+          "f05_out.bin": "564f2b290b6d41ff92c137fb4fa785172852cb4394fa2576de0b41d2bf8f3978",
+          "f06_out.bin": "9b47b47687397f2865225f0e0627919599158f69428840b659f8238430866ac7",
+          "f07_out.bin": "6cd27ea05c2e94c0f62b33e8860b6b70c7aa1da5e0b5c5d92b81ce04f88f1a6e"
+        },
+        "log": "local-release-validation/game-replay/exact-1791590789976-62446.log"
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590799393-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 1.3817945420000015,
+        "sha256": {
+          "f00_out.bin": "db3d6c9d34f32cf83124e684ca02920cad5b5dacb7dbe15565f1aa3acad61e39",
+          "f01_out.bin": "9252f748a30463adf96b7ab224953c9a24cd0c0b9110a2c339be49e46da3ab0e",
+          "f02_out.bin": "b2f37e9cc6a00750c775893e02124d08a327ca3e0cd94a090ffd7e2ff9e4a1b0",
+          "f03_out.bin": "4aacf9f37c0f3b1a6512b7a96385ade4bcd1f6a598df2e6ace540a76a299d70a",
+          "f04_out.bin": "55b22f25ef9619f1fefeed3d2365cd015c00535e915c2de42021d35671aae3bb",
+          "f05_out.bin": "783e7d8fdf4a355e44cba7c6d10149e2421251bdc8c9526ab73e001ae64e5792",
+          "f06_out.bin": "22f4d2f7c6219d305dfdddfdaf28757954702c1ba2ba3ce94a020d2ad3329d6d",
+          "f07_out.bin": "d70ad42bba05a6984d4ef7dcc7fa480e3dc8a2882c3b1842ce852dcb34743003"
+        },
+        "log": "local-release-validation/game-replay/exact-1791590799393-62446.log"
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590804458-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 1.5358539160000007,
+        "sha256": {
+          "f00_out.bin": "0a72a253dfc001fcedb84a74add285156904b6ae5e10ef059391435c7704db7d",
+          "f01_out.bin": "b45fc57f15a7734acfc4eec3ef7237f1f91c2a889a59ccfda350291c5183792e",
+          "f02_out.bin": "0edf45fb6f9d62b6e8b16ad3384cf48888b811e20b2634e9b52987f22566b614",
+          "f03_out.bin": "4bc1543c84b4d4fdad2e109fb6d7acca48b555553cab4762f65388e8356deb77",
+          "f04_out.bin": "b269928b060e8bd5811fddbf650f46f7562401d4b7967a3e469bab75506a8245",
+          "f05_out.bin": "341afdef9426a4fe20c0d03dc276d5e1efa0f65f95db74900c127e0d33c213a7",
+          "f06_out.bin": "0c7fc867a3c0ac1d33ce2ad1d36f655464d9811bd46506d893a86b3e83de13d7",
+          "f07_out.bin": "cce116f1fa49480c3cb057b6b83952f9c061845a19f819996efc964f58ab03b9"
+        },
+        "log": "local-release-validation/game-replay/exact-1791590804458-62446.log"
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590816258-62446",
+        "frames": 8,
+        "byte_identical": 8,
+        "same_schedule_and_layout": true,
+        "seconds": 0.9766789999999972,
+        "sha256": {
+          "f00_out.bin": "e6ebbca5f22e460234abe69ae632608008869523902e10ed5d88e1b8933e2c7b",
+          "f01_out.bin": "7527358b36dfc6542e92866f6a1fffb1aaeabd60237716d4727b08bb8bbba003",
+          "f02_out.bin": "09ccd0058884379df074181afdfcebce9e042a1d30d678cddbf7815aef201b89",
+          "f03_out.bin": "c8f3a19a50aef7fc546ece97f20210452e3446ddd01f5589496d21d22fd6e9e2",
+          "f04_out.bin": "226b9872689c175ecaa020e013f902d065c7177c493b54cbc1ad91ff44567285",
+          "f05_out.bin": "bbffb86390f1663877b877de5978fbc7ffbdc17e0c9b882e1a8327583436d08b",
+          "f06_out.bin": "64a6cd21ba3e94bffc639ceb8a5412526ce9b55efa32534d314ff89d5c66fd2f",
+          "f07_out.bin": "36a86730eed5df765dd85b6af2589702f4ba090d7f1bcf23b96ffdfd3ec9a1f7"
+        },
+        "log": "local-release-validation/game-replay/exact-1791590816258-62446.log"
+      }
+    ],
+    "image_replay_total_byte_identical": 96,
+    "benchmark_note": "The saved local six-round benchmark is retained without re-labeling it as an FPS measurement. Public MPP shader/model sources match the measured version; the latest public SIMD/Winograd path is retained and passes the SIMD regression suite."
+  }
+}

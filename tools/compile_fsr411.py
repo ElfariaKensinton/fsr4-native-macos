@@ -26,6 +26,7 @@ from fsr411.lossy import apply_hlsl_lossy
 from fsr411.lossy_shaders import apply_lossy_pre, apply_lossy_post, apply_lossy_post_cells, reuse_only_pre
 from fsr411.post_optimization import apply_post_optimization, POST_PIXELS_PER_GROUP
 from fsr411.autoexposure import split_autoexposure
+from fsr411.scratch_alias import alias_post_cnb_cache, post_cnb_layout
 
 TIERS = {1080: "reimpl411", 2160: "reimpl2160", 4320: "reimpl4320"}
 
@@ -150,6 +151,7 @@ def input_hash(root: Path, options: dict) -> str:
     paths = [Path(__file__).resolve(), root / "tools/compile_variant.py", root / "tools/fsr411/portability.py", root / "tools/fsr411_msl.py",
              root / "tools/fsr411/lossy.py", root / "tools/fsr411/lossy_shaders.py",
              root / "tools/fsr411/post_optimization.py", root / "tools/fsr411/autoexposure.py"]
+    paths.append(root / "tools/fsr411/scratch_alias.py")
     for directory in ("third_party/fsr411/shaders", "third_party/fsr411/ultraperformance", "third_party/fsr4/dx12",
                       "third_party/fsr4/include/gpu", "third_party/fsr4/api/internal/gpu"):
         paths.extend(p for p in (root / directory).rglob("*") if p.is_file())
@@ -176,6 +178,9 @@ def build(args) -> dict:
     tier = int(args.res)
     if args.profile == "lossy":
         args.external_post_cnb = 1
+    alias_post_cnb = bool(getattr(args, "post_cnb_alias", 0))
+    if alias_post_cnb and not args.external_post_cnb:
+        raise ValueError("POST-CNB alias requires the external POST-CNB pipeline")
     strict = bool(args.strict_math) and args.profile in FAST_MATH_PROFILES
     res_index = list(TIERS).index(tier)
     options = {"version": "4.1.1", "tier": tier, "depth_inverted": args.depth_inverted,
@@ -185,12 +190,14 @@ def build(args) -> dict:
                "external_post_cnb": args.external_post_cnb, "profile": args.profile}
     if strict:
         options["strict_math"] = 1
+    if alias_post_cnb:
+        options["post_cnb_alias"] = 1
     key = (f"fsr411_{tier}_di{args.depth_inverted}_lm{args.low_res_mv}"
            f"_jm{args.jittered_mv}_cs{args.colorspace}_ae{args.auto_exposure}_o{args.optimize}"
            + ("_up1" if args.ultra_performance else "")
            + {"lossy": "_lossy", "exact-fast": "_fast"}.get(args.profile, "")
            + ("_pc1" if args.external_post_cnb else "")
-           + ("_sm1" if strict else ""))
+           + ("_sm1" if strict else "") + ("_ca1" if alias_post_cnb else ""))
     output = builddir / key
     output.mkdir(parents=True, exist_ok=True)
     shared_digest = input_hash(root, {})
@@ -230,6 +237,8 @@ def build(args) -> dict:
                     source = apply_post_optimization(source)
                     if args.profile == "lossy":
                         source = apply_lossy_post_cells(source)
+                if alias_post_cnb and path.name.startswith("post_rev_") and path.suffix == ".hlsl":
+                    source = alias_post_cnb_cache(source, tier)
                 # Tiny PRE/filter loops should remain unrolled: their dynamic
                 # arrays otherwise spill heavily. Only the large scalar model
                 # oracle needs loop preservation to keep the driver stable.
@@ -276,6 +285,8 @@ def build(args) -> dict:
                   "separate_reuse_pre": bool(separate_reuse_pre),
                   "order": [s["name"] for s in stages if 0 <= s["index"] <= 26],
                   "kernels": kernels}
+        if args.external_post_cnb:
+            result["post_cnb_layout"] = post_cnb_layout(tier, alias_post_cnb)
         temp = manifest_path.with_suffix(".tmp")
         temp.write_text(json.dumps(result, indent=2) + "\n")
         temp.replace(manifest_path)
@@ -406,7 +417,7 @@ def main():
     parser.add_argument("--profile", choices=("exact", "exact-fast", "lossy"), default="exact")
     for flag, default in (("depth-inverted", 0), ("low-res-mv", 1), ("jittered-mv", 0),
                           ("auto-exposure", 0), ("optimize", 0), ("ultra-performance", 0),
-                          ("external-post-cnb", 0), ("strict-math", 0)):
+                          ("external-post-cnb", 0), ("strict-math", 0), ("post-cnb-alias", 0)):
         parser.add_argument("--" + flag, type=int, choices=(0, 1), default=default)
     parser.add_argument("--colorspace", type=int, choices=range(4), default=0)
     parser.add_argument("--only", nargs="+")

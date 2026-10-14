@@ -146,9 +146,12 @@ int main(int argc,char **argv) { @autoreleasepool {
                 for(const auto &snapshot:reference.captures) {
                     const auto bn=native.captures.find(snapshot.first);if(bn==native.captures.end())continue;
                     auto ap=(const uint8_t *)snapshot.second.contents,bp=(const uint8_t *)bn->second.contents;
-                    size_t n=0,first=0;
-                    for(size_t k=0;k<snapshot.second.length;++k)if(ap[k]!=bp[k]){if(!n)first=k;++n;}
-                    std::printf("scratch %s differences=%zu first=%zu %u/%u\n",snapshot.first.c_str(),n,first,ap[first],bp[first]);
+                    size_t n=0,first=0,common=std::min(snapshot.second.length,bn->second.length);
+                    for(size_t k=0;k<common;++k)if(ap[k]!=bp[k]){if(!n)first=k;++n;}
+                    std::printf("scratch %s physical differences=%zu first=%zu %u/%u, bytes=%zu/%zu%s\n",
+                        snapshot.first.c_str(),n,first,n?ap[first]:0u,n?bp[first]:0u,
+                        size_t(snapshot.second.length),size_t(bn->second.length),
+                        reference.postCnbAlias!=native.postCnbAlias?" (different layouts; dead tensor bytes are not comparable)":"");
                 }
             }
             return 1;

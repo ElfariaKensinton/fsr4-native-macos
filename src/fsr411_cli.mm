@@ -329,6 +329,24 @@ std::string frame_prefix(const std::string &directory, size_t frame) {
     return directory + name;
 }
 
+NSDictionary *scratch_layout(const fsr411::View &view) {
+    const auto &l=view.scratchLayout;
+    NSMutableArray *captured=[NSMutableArray array], *cacheValid=[NSMutableArray array];
+    for(const auto &entry:view.captures) {
+        [captured addObject:ns(entry.first)];
+        if(l.cacheBytes && (view.skippedInference || entry.first=="post")) [cacheValid addObject:ns(entry.first)];
+    }
+    return @{@"schema_version":@1,
+        @"policy":view.postCnbAlias?@"alias_after_pass12_v1":l.cacheBytes?@"append_v1":@"graph_only_v1",
+        @"arena_bytes":@(l.arenaBytes),@"allocated_bytes":@(view.scratch.length),
+        @"source_plane_bytes":@(l.sourcePlaneBytes),@"offset":@(l.cacheOffset),@"bytes":@(l.cacheBytes),
+        @"row_stride":@(l.rowStride),@"valid_after":l.cacheBytes?@"post_cnb":@"not_applicable",
+        @"preserves_neural_intermediates_after_post":@(!view.postCnbAlias),
+        @"whole_raw_arena_comparable_to_legacy":@(!view.postCnbAlias),
+        @"inference_reused":@(view.skippedInference),@"captured_stages":captured,
+        @"cache_valid_for_captured_stages":cacheValid};
+}
+
 void write_preview(const std::string &path, const std::vector<uint8_t> &raw,
                    uint32_t w, uint32_t h, int colorspace) {
     std::vector<uint8_t> pixels(size_t(w)*h*4);
@@ -516,6 +534,7 @@ int fsr411_main(int argc, char **argv) {
                 if(!std::isfinite(milliseconds) || milliseconds<=0) fail("Metal did not report a valid GPU duration");
                 NSDictionary *stageReport=stageProfiler?stageProfiler->resolve(milliseconds):nil;
                 actualBackend=view.backendLabel; variant=view.variantKey;
+                NSDictionary *scratchMetadata=scratch_layout(view);
                 if(!bench || run>0) {
                     times.push_back(milliseconds);
                     if(view.skippedInference) ++reusedFrames; else ++neuralRuns;
@@ -523,6 +542,7 @@ int fsr411_main(int argc, char **argv) {
                     for(const auto &entry:view.captures) [captured addObject:ns(entry.first)];
                     NSMutableDictionary *measurement=[@{@"iteration":@(bench?run-1:0),@"frame":@(index),
                         @"gpu_ms":@(milliseconds),@"backend":ns(actualBackend),@"variant":ns(variant),
+                        @"scratch_layout":scratchMetadata,
                         @"skipped_inference":@(view.skippedInference),
                         @"sequence_neural_runs":@(view.neuralRuns),@"sequence_reused_frames":@(view.reusedFrames),
                         @"captured_stages":captured,
@@ -544,6 +564,7 @@ int fsr411_main(int argc, char **argv) {
                     auto output=read_texture(device,queue,frame.output,8);
                     write_preview(dst+"out.png",output,in.uw,in.uh,options.colorspace);
                     write_file(dst+"out.bin",output.data(),output.size());
+                    if(dumpState || !options.captureStages.empty()) write_json(dst+"scratch_layout.json",scratchMetadata);
                     for(const auto &stage:options.captureStages) {
                         std::string suffix=stage+"_scratch.bin";
                         if(stage.rfind("pad",0)!=0) {
@@ -570,6 +591,7 @@ int fsr411_main(int argc, char **argv) {
                                 @"metal_pixel_format":@(state.texture.pixelFormat),@"bytes_per_pixel":@(state.bytes)};
                         }
                         layout[@"scratch_bytes"]=@(view.scratch.length);
+                        layout[@"scratch_layout"]=scratchMetadata;
                         write_json(dst+"state.json",layout);
                     }
                 }

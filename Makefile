@@ -9,7 +9,7 @@ BINDIR   := tools/bin
 
 all: $(BINDIR)/fsr4mac $(BINDIR)/gen_testcase $(BINDIR)/compare $(BINDIR)/bilin $(BINDIR)/bin2png
 
-test: test-input test-settings test-fsr411-math test-installer
+test: test-input test-settings test-fsr411-math test-installer test-fsr411-layout test-fsr411-cache
 	mkdir -p build/tests
 	$(CXX) $(CXXFLAGS) tests/backend_policy_test.cpp -o build/tests/backend_policy_test
 	build/tests/backend_policy_test
@@ -25,6 +25,11 @@ test-fsr411-math:
 	mkdir -p build/tests
 	$(CXX) $(CXXFLAGS) tests/fsr411_math_test.cpp -o build/tests/fsr411_math_test
 	build/tests/fsr411_math_test
+
+test-fsr411-layout:
+	mkdir -p build/tests
+	$(CXX) $(CXXFLAGS) -Wextra -Werror tests/fsr411_scratch_layout_test.cpp -o build/tests/fsr411_scratch_layout_test
+	build/tests/fsr411_scratch_layout_test
 
 test-settings:
 	mkdir -p build/tests
@@ -51,6 +56,8 @@ test-fsr411-gpu:
 	$(MAKE) test-fsr411-lossy
 	$(MAKE) test-fsr411-autoexposure
 	$(MAKE) test-fsr411-cadence
+	$(MAKE) test-fsr411-reset
+	$(MAKE) test-fsr411-cache-gpu
 	$(MAKE) test-fsr411-live
 	$(MAKE) test-fsr411-cli
 
@@ -72,11 +79,11 @@ build/tests/fsr411_quantize_test.metallib: tests/fsr411_quantize_test.metal src/
 test-fsr411-quantize: build/tests/fsr411_quantize_test build/tests/fsr411_quantize_test.metallib
 	build/tests/fsr411_quantize_test build/tests/fsr411_quantize_test.metallib
 
-build/tests/fsr411_runtime_test: tests/fsr411_runtime_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr4_input.h Makefile
+build/tests/fsr411_runtime_test: tests/fsr411_runtime_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr411_scratch_layout.h src/fsr4_input.h Makefile
 	mkdir -p build/tests
 	$(CXX) $(CXXFLAGS) -fobjc-arc -I src $< $(FRAMEWORKS) -o $@
 
-build/tests/fsr411_snapshot_test: tests/fsr411_snapshot_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr4_input.h src/fsr4_log.h Makefile
+build/tests/fsr411_snapshot_test: tests/fsr411_snapshot_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr411_scratch_layout.h src/fsr4_input.h src/fsr4_log.h Makefile
 	mkdir -p build/tests
 	$(CXX) $(CXXFLAGS) -fobjc-arc -I src $< $(FRAMEWORKS) -o $@
 
@@ -84,7 +91,34 @@ test-fsr411-snapshot: build/tests/fsr411_snapshot_test
 	build/tests/fsr411_snapshot_test "$(CURDIR)"
 	build/tests/fsr411_snapshot_test "$(CURDIR)" --mtl4
 
-build/tests/fsr411_lossy_cadence_test: tests/fsr411_lossy_cadence_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr4_input.h Makefile
+build/tests/fsr411_reset_clear_test: tests/fsr411_reset_clear_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr411_scratch_layout.h src/fsr4_input.h Makefile
+	mkdir -p build/tests
+	$(CXX) $(CXXFLAGS) -fobjc-arc -I src $< $(FRAMEWORKS) -o $@
+
+test-fsr411-reset: build/tests/fsr411_reset_clear_test
+	build/tests/fsr411_reset_clear_test "$(CURDIR)" "$(CURDIR)/build" --compile --profile lossy
+	build/tests/fsr411_reset_clear_test "$(CURDIR)" "$(CURDIR)/build" --compile --profile lossy --mtl4
+	build/tests/fsr411_reset_clear_test "$(CURDIR)" "$(CURDIR)/build" --compile --profile exact-fast
+	build/tests/fsr411_reset_clear_test "$(CURDIR)" "$(CURDIR)/build" --compile --profile exact-fast --mtl4
+
+.PHONY: test-fsr411-reset
+
+build/tests/fsr411_cache_fallback_test: tests/fsr411_cache_fallback_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr411_scratch_layout.h src/fsr4_input.h Makefile
+	mkdir -p build/tests
+	$(CXX) $(CXXFLAGS) -fobjc-arc -I src $< $(FRAMEWORKS) -o $@
+
+test-fsr411-cache: build/tests/fsr411_cache_fallback_test
+	build/tests/fsr411_cache_fallback_test
+
+test-fsr411-cache-gpu: build/tests/fsr411_cache_fallback_test
+	python3 tools/compile_fsr411.py --root "$(CURDIR)" --builddir "$(CURDIR)/build" --res 1080 --profile lossy --optimize 1 --external-post-cnb 1 --post-cnb-alias 0
+	python3 tools/compile_fsr411.py --root "$(CURDIR)" --builddir "$(CURDIR)/build" --res 1080 --profile lossy --optimize 1 --external-post-cnb 1 --post-cnb-alias 1
+	python3 tools/gen_fsr411_native.py --tier 1080 --profile lossy --preset normal --outdir "$(CURDIR)/build/fsr411_native_1080_lossy"
+	build/tests/fsr411_cache_fallback_test --gpu "$(CURDIR)" "$(CURDIR)/build"
+
+.PHONY: test-fsr411-cache test-fsr411-cache-gpu
+
+build/tests/fsr411_lossy_cadence_test: tests/fsr411_lossy_cadence_test.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr411_scratch_layout.h src/fsr4_input.h Makefile
 	mkdir -p build/tests
 	$(CXX) $(CXXFLAGS) -fobjc-arc -I src $< $(FRAMEWORKS) -o $@
 
@@ -172,7 +206,7 @@ test-fsr411-cadence: build/tests/fsr411_lossy_cadence_test
 	build/tests/fsr411_lossy_cadence_test "$(CURDIR)" --compile --inflight
 	build/tests/fsr411_lossy_cadence_test "$(CURDIR)" --compile --inflight --mtl4
 
-dist/crossover/libfsr4hook.dylib: Makefile tools/crossover/crossover_fsr4.py hook/fsr4_metalfx.m src/fsr4_live.mm src/fsr4_panel.mm src/fsr4_live.h src/fsr4_input.h src/fsr4_log.h src/fsr4_device.h src/fsr4_backend.h src/i8mpp_host.h src/fsr411_live.mm src/fsr411_runtime.h src/fsr411_capture_io.h src/fsr411_model.h
+dist/crossover/libfsr4hook.dylib: Makefile tools/crossover/crossover_fsr4.py hook/fsr4_metalfx.m src/fsr4_live.mm src/fsr4_panel.mm src/fsr4_live.h src/fsr4_input.h src/fsr4_log.h src/fsr4_device.h src/fsr4_backend.h src/i8mpp_host.h src/fsr411_live.mm src/fsr411_runtime.h src/fsr411_capture_io.h src/fsr411_model.h src/fsr411_scratch_layout.h
 	python3 -c 'import sys; sys.path.insert(0, "tools/crossover"); import crossover_fsr4 as c; c.build_hook(c.DIST / "hook.log")'
 
 dist/crossover/fsr411_live_regions_test: tests/fsr411_live_regions_test.mm src/fsr4_live.h src/fsr4_input.h dist/crossover/libfsr4hook.dylib Makefile
@@ -182,7 +216,7 @@ test-fsr411-live: dist/crossover/fsr411_live_regions_test
 	FSR4_COMPILE=1 arch -x86_64 $< "$(CURDIR)" i8mpp classic switch
 	FSR4_COMPILE=1 arch -x86_64 $< "$(CURDIR)" i8mpp mtl4 switch
 
-build/obj/fsr411_cli.o: Makefile src/fsr411_cli.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr4_input.h src/fsr4_log.h src/pngio.h
+build/obj/fsr411_cli.o: Makefile src/fsr411_cli.mm src/fsr411_runtime.h src/fsr411_model.h src/fsr411_scratch_layout.h src/fsr4_input.h src/fsr4_log.h src/pngio.h
 	mkdir -p build/obj
 	$(CXX) $(CXXFLAGS) -fobjc-arc -isysroot $(SDKROOT) -c src/fsr411_cli.mm -o $@
 
@@ -219,7 +253,7 @@ test-installer:
 	python3 tests/installer/check_strings.py
 
 .PHONY: installer test-installer
-.PHONY: all clean test test-gpu test-input test-settings test-fsr411-math build-fsr411-tests test-fsr411-gpu test-fsr411-native test-fsr411-runtime test-fsr411-scalar test-fsr411-lossy test-fsr411-autoexposure test-fsr411-cadence test-fsr411-live test-fsr411-cli
+.PHONY: all clean test test-gpu test-input test-settings test-fsr411-math test-fsr411-layout build-fsr411-tests test-fsr411-gpu test-fsr411-native test-fsr411-runtime test-fsr411-scalar test-fsr411-lossy test-fsr411-autoexposure test-fsr411-cadence test-fsr411-live test-fsr411-cli
 
 # Run the signed-chroma regression before the remaining sequential GPU suites.
 test-fsr411-gpu: test-fsr411-chroma
