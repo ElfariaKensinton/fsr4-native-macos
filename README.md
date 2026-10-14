@@ -15,7 +15,7 @@ Works as a standalone tool and inside games via CrossOver (DLSS → FSR 4).
 
 ## Easiest: the FSR4 Installer app
 
-1. Download **FSR4-Installer-v1.5.dmg** from the
+1. Download **FSR4-Installer-v1.6.dmg** from the
    [latest release](https://github.com/UzenUPoZiTiV4ik/fsr4-native-macos/releases/latest)
    and drag **FSR4 Installer** to Applications.
 2. First launch: the app is not notarized, so macOS blocks it. Open
@@ -82,14 +82,15 @@ make build-fsr411-tests
 make test-fsr411-gpu
 ```
 
-Build the installer app and DMG: `make installer INSTALLER_VERSION=v1.3`
-(or `python3 tools/installer/build_app.py v1.3 --dmg`).
+Build the installer app and DMG: `make installer INSTALLER_VERSION=v1.6`
+(or `python3 tools/installer/build_app.py v1.6 --dmg`).
 
 ## Documentation
 
 | Topic | Link |
 | --- | --- |
 | Performance and validation | [docs/FSR411_PERFORMANCE.md](docs/FSR411_PERFORMANCE.md) |
+| Lite image quality update | [docs/FSR411_QUALITY_UPDATE.md](docs/FSR411_QUALITY_UPDATE.md) |
 | Benchmark method | [BENCHMARK.md](BENCHMARK.md) |
 | Input format | [docs/FSR411_INPUT_CONTRACT.md](docs/FSR411_INPUT_CONTRACT.md) |
 | GPU profiling | [docs/FSR411_PROFILING.md](docs/FSR411_PROFILING.md) |
@@ -97,6 +98,9 @@ Build the installer app and DMG: `make installer INSTALLER_VERSION=v1.3`
 | Model sources | [third_party/fsr411/README.md](third_party/fsr411/README.md) |
 | Old FSR 4.0.2 model | [architecture](docs/FSR402_ARCHITECTURE.md), [guide](docs/GUIDE_FSR402.md) |
 
-The Lossy mode follows the numerical policy of the
+The Lossy network keeps the numerical policy of the
 [RX 7000 optimization project](https://github.com/zgauthier2000/fsr4-shader-performance-overrides)
-(release `dll-2026-10-07`), implemented independently on MIT sources.
+(release `dll-2026-10-07`), implemented independently on MIT sources. Selected
+temporal fixes from releases through `dll-2026-10-14` retain more thin detail
+and update effects without motion vectors. A separate PRE for reused frames
+removes unused network-input work; see the quality update for measurements.

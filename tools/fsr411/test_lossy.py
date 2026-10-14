@@ -130,6 +130,21 @@ class SourceTransformsTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 transform("", 1080)
 
+    def test_reuse_pre_keeps_the_host_constant_layout_and_requires_lossy(self):
+        for tier, folder, name in ((1080,"reimpl411","pre_rev_411.hlsl"),
+                                  (2160,"reimpl2160","pre_rev_411_v15_2160.hlsl"),
+                                  (4320,"reimpl4320","pre_rev_411_v15_4320.hlsl")):
+            source = (ROOT / "third_party/fsr411/shaders" / folder / name).read_text()
+            with self.assertRaises(ValueError):
+                lossy_shaders.reuse_only_pre(source)
+            transformed = lossy_shaders.apply_lossy_pre(source,tier)
+            result = lossy_shaders.reuse_only_pre(transformed)
+            self.assertEqual(lossy_shaders.reuse_only_pre(result),result)
+            before = re.search(r"cbuffer Fsr411LossyConstants.*?\{(.*?)\};",transformed,re.S)[1]
+            after = re.search(r"cbuffer Fsr411LossyConstants.*?\{(.*?)\};",result,re.S)[1]
+            self.assertEqual(before.replace("lossySkip","lossyUnused"),after)
+            self.assertIn("static const uint lossySkip = 1u;",result)
+
 
 if __name__ == "__main__":
     unittest.main()

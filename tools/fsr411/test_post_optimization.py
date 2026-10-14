@@ -205,6 +205,11 @@ class PostOptimizationTests(unittest.TestCase):
         for name in ("pre", "post"):
             self.assertEqual(math_flags(name, "exact"), ["-fno-fast-math", "-ffp-contract=off"])
 
+    def test_reuse_pre_inherits_pre_math_including_strict_validation(self):
+        for profile in ("exact", "exact-fast", "lossy"):
+            for strict in (False, True):
+                self.assertEqual(math_flags("pre_reuse",profile,strict),math_flags("pre",profile,strict))
+
     def test_dispatch_writes_each_pixel_once_in_partial_tiles(self):
         # Runtime output viewports are aligned to eight; they need not be
         # multiples of sixteen. No edge lane may prevent the cache barrier.

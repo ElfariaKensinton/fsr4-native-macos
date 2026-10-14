@@ -1,6 +1,14 @@
 # FSR4-Metal — project state & handoff
 
-Last updated: **2026-10-12**, optimization of **FSR 4.1.1.2740 INT8**.
+Last updated: **2026-10-14**, optimization of **FSR 4.1.1.2740 INT8**.
+
+2026-10-14 (Lite quality): selected upstream history rules preserve thin
+detail at rest/in uniform motion and update changed effects without motion
+vectors. The folded network and its quantizers are unchanged. Optimized
+Lossy additionally compiles `pre_reuse`, eliminating unreachable neural-input
+work on reused frames; older bundles fall back to `pre`. The 27-stage graph,
+cache-validity decision and frame cadence are retained. Exact and Exact Fast
+retain their output. Measurements and limits: [FSR411_QUALITY_UPDATE.md](FSR411_QUALITY_UPDATE.md).
 
 2026-10-12 (M1–M4 backend, latest): new `simd` backend (`--simd`/`--fp16`,
 `FSR4_MODEL=simd`), auto-selected on Apple7–9 GPUs instead of scalar. INT8

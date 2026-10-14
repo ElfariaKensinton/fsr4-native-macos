@@ -79,12 +79,12 @@ void qa_query(uint id : SV_DispatchThreadID) {
     uint4 externalCnb = ScratchBuffer.Load4(uint(iy) * qaCacheStride + uint(ix) * 16u);
     uint packedVss[4] = {externalCnb.x, externalCnb.y, externalCnb.z, externalCnb.w};
     uint4 lossyOwn = uint4(0u, 0u, 0u, 0u);
-    bool atRest = false, uncovered = false;
+    bool atRest = false, uncovered = false, otherMotion = false;
     if (lossySkip != 0u) {
         lossyOwn = Fsr411LossyReadMotion(cell);
-        Fsr411LossyClassify(cell, lossyOwn, atRest, uncovered);
+        Fsr411LossyClassify(cell, lossyOwn, atRest, uncovered, otherMotion);
     }
-    QaResults[id * 9u] = uint4(lossyOwn.xy, uint(atRest), uint(uncovered));
+    QaResults[id * 9u] = uint4(lossyOwn.xy, uint(atRest), uint(uncovered) | (uint(otherMotion) << 1u));
     [loop] for (uint pk = 0; pk < 4; ++pk) {
         uint2 tid = uint2(ix * 2, iy * 2) + uint2(pk & 1u, pk >> 1u);
 LOOKUP
@@ -93,7 +93,29 @@ LOOKUP
     }
 }
 """.replace("LOOKUP", lookup)
-    return declarations + module._declarations(tier) + module.PRE_HELPERS + module.POST_HELPERS + record + query
+    blend = r"""
+struct QaBlendInput {
+    float3 current;
+    float networkWeight;
+    float3 history;
+    uint flags;
+    float3 minimum;
+    float reserved0;
+    float3 maximum;
+    float reserved1;
+};
+StructuredBuffer<QaBlendInput> QaBlends : register(t3);
+RWStructuredBuffer<float4> QaBlendResults : register(u1);
+[numthreads(32, 1, 1)]
+void qa_resolve(uint id : SV_DispatchThreadID) {
+    if (id >= queryCount) return;
+    QaBlendInput b = QaBlends[id];
+    float3 result = Fsr411LossyResolve(b.current, b.history, b.minimum, b.maximum, b.networkWeight,
+        (b.flags & 1u) != 0u, (b.flags & 2u) != 0u, (b.flags & 4u) != 0u);
+    QaBlendResults[id] = float4(result, 1.0f);
+}
+"""
+    return declarations + module._declarations(tier) + module.PRE_HELPERS + module.POST_HELPERS + record + query + blend
 
 
 def signature(msl, entry):
@@ -113,7 +135,7 @@ def compile_fixture(args):
     path.write_text(hlsl)
     metadata = {"tier": tier, "depth_inverted": inverted, "low_res_mv": low,
                 "source_sha256": hashlib.sha256(hlsl.encode()).hexdigest(), "kernels": {}}
-    for entry in ("qa_record", "qa_query"):
+    for entry in ("qa_record", "qa_query", "qa_resolve"):
         spv, metal, air, lib = [folder / (entry + suffix) for suffix in (".spv", ".metal", ".air", ".metallib")]
         run([ROOT / "tools/bin/dxc", "-spirv", "-T", "cs_6_6", "-E", entry, "-HV", "2021", "-O3",
              "-fspv-target-env=vulkan1.3", "-fvk-t-shift", "32", "0", "-fvk-u-shift", "64", "0",

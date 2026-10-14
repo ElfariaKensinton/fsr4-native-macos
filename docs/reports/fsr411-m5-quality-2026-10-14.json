@@ -1,0 +1,1048 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-14",
+  "scope": "FSR 4.1 Lite temporal resolve and reuse-only PRE; network folding, quantization and cadence unchanged",
+  "upstream": {
+    "repository": "https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
+    "temporal_reference_release": "dll-2026-10-14",
+    "temporal_reference_commit": "9ab64571eda2d4f3a802b2b2e8c1bbe006da15da",
+    "network_policy_release": "dll-2026-10-07",
+    "network_policy_commit": "8d72457ab6302dab8e4f918f6bf83a1af3900288",
+    "scope": "Selected documented history rules independently implemented on MIT sources; not full release parity"
+  },
+  "development_source": {
+    "head": "d102ed222c6ba94746cb6f3a093c814436b4c12e",
+    "source_hashes": {
+      "tools/fsr411/lossy_shaders.py": "ecb85ad008c9671a9cdbe8ca7c8ca2dd8514a21bbdf9637448f5fa1aa58255d6",
+      "tools/compile_fsr411.py": "2b6924a493e7a80af1f68f244a5c217ce49a433fb512c6dbb09d3f91edaed583",
+      "src/fsr411_runtime.h": "31fa0ca888dc1b9ce96a6503614237d49dc366173df491f5a9417ee62c584af6",
+      "tools/fsr411/lossy.py": "ae67e882e0b8041cbd19497f0b2a633ddaa3529611a7426cc7176ca2ee77e49d",
+      "tools/gen_fsr411_native.py": "43e178f2668534dd72e0e08ffa19354188d61886d475605f870c828babee7352",
+      "third_party/fsr411/initializers.bin": "a54e552ff69a3f7199861417f7ae461d1f67f636ab532c6ec9d8ea5d2963735a",
+      "third_party/fsr411/initializers-ultraperformance.bin": "3c42fc6eabfa9b5b1e489df0e9b2f58e3f9fa22048c584f6839bb27d32a0640e"
+    },
+    "fsr411_native_1080_lossy": {
+      "fsr411_native_weights.bin": true,
+      "fsr411_native_params.bin": true
+    },
+    "fsr411_native_2160_lossy": {
+      "fsr411_native_weights.bin": true,
+      "fsr411_native_params.bin": true
+    }
+  },
+  "quality": {
+    "reference": "8x8 analytic integration; unit SDR peak; all RGB channels",
+    "measured_frames_per_scene": 24,
+    "border_excluded": 12,
+    "scenes": {
+      "wire_static": {
+        "before": {
+          "psnr_db": 22.985713516198793,
+          "mae": 0.021650629118084908,
+          "reuse_psnr_db": 22.52095862115262,
+          "temporal_error": 0.010579166933894157,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 25.199184382054284,
+          "mae": 0.016730600968003273,
+          "reuse_psnr_db": 25.624579016954353,
+          "temporal_error": 0.011041530407965183,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "wire_pan": {
+        "before": {
+          "psnr_db": 22.73614184306414,
+          "mae": 0.02285746857523918,
+          "reuse_psnr_db": 22.765599920252534,
+          "temporal_error": 0.0370960608124733,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 23.813595437035882,
+          "mae": 0.020132388919591904,
+          "reuse_psnr_db": 24.158523045785554,
+          "temporal_error": 0.03341686725616455,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "particles": {
+        "before": {
+          "psnr_db": 45.68420995092082,
+          "mae": 0.0007106621051207185,
+          "reuse_psnr_db": 42.74524816606474,
+          "temporal_error": 0.00040356413228437304,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 56.787421831930445,
+          "mae": 0.0005590853397734463,
+          "reuse_psnr_db": 54.87953860332532,
+          "temporal_error": 0.00011704856297001243,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "dark_particles": {
+        "before": {
+          "psnr_db": 55.0195182100283,
+          "mae": 0.0005728498799726367,
+          "reuse_psnr_db": 52.30449917397494,
+          "temporal_error": 0.0001415969163645059,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 61.82939986885934,
+          "mae": 0.0005309103871695697,
+          "reuse_psnr_db": 60.46131975073664,
+          "temporal_error": 6.210629362612963e-05,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "static": {
+        "before": {
+          "psnr_db": 54.613134624537565,
+          "mae": 0.0014896361390128732,
+          "reuse_psnr_db": 54.682262493527006,
+          "temporal_error": 0.00021133806149009615,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 54.69613289391426,
+          "mae": 0.0014741800259798765,
+          "reuse_psnr_db": 54.75840198338119,
+          "temporal_error": 0.00021242795628495514,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "grain6": {
+        "before": {
+          "psnr_db": 43.43365918216613,
+          "mae": 0.00526576628908515,
+          "reuse_psnr_db": 43.51725918783374,
+          "temporal_error": 0.0008458736701868474,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 43.562901805190926,
+          "mae": 0.0052225543186068535,
+          "reuse_psnr_db": 43.65243572441075,
+          "temporal_error": 0.0008494192734360695,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "grain15": {
+        "before": {
+          "psnr_db": 36.39230148985452,
+          "mae": 0.011942648328840733,
+          "reuse_psnr_db": 36.463216278639116,
+          "temporal_error": 0.001981572015210986,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 36.52602484954307,
+          "mae": 0.011805949732661247,
+          "reuse_psnr_db": 36.601535969836874,
+          "temporal_error": 0.0019854435231536627,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "screen_bar": {
+        "before": {
+          "psnr_db": 33.84499541398037,
+          "mae": 0.0029421881772577763,
+          "reuse_psnr_db": 32.82694126726895,
+          "temporal_error": 0.0038883560337126255,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 33.74923398691318,
+          "mae": 0.002992689609527588,
+          "reuse_psnr_db": 32.71288789661323,
+          "temporal_error": 0.004013036843389273,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      },
+      "moving_object": {
+        "before": {
+          "psnr_db": 43.65656569080809,
+          "mae": 0.0007502335938625038,
+          "reuse_psnr_db": 42.65296340465828,
+          "temporal_error": 0.0004978392389602959,
+          "neural_runs": 16,
+          "reused_frames": 16
+        },
+        "after": {
+          "psnr_db": 43.64220949750424,
+          "mae": 0.0007507319678552449,
+          "reuse_psnr_db": 42.64740040865614,
+          "temporal_error": 0.00049882399616763,
+          "neural_runs": 16,
+          "reused_frames": 16
+        }
+      }
+    }
+  },
+  "normal_power_performance": {
+    "device": "Apple M5",
+    "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+    "started_at": "2026-10-14T19:15:35.235781+00:00",
+    "finished_at": "2026-10-14T19:16:09.163713+00:00",
+    "power": {
+      "source": "battery",
+      "low_power_mode_before": 0,
+      "low_power_mode_after": 0,
+      "battery_percent_before": 21,
+      "battery_percent_after": 21
+    },
+    "render_size": [
+      864,
+      560
+    ],
+    "output_size": [
+      1712,
+      1112
+    ],
+    "preset": "performance",
+    "backend": "int8-mpp",
+    "auto_exposure": true,
+    "rcas": true,
+    "sharpness": 0.4009999930858612,
+    "input": "build/ghosting-diagnostics/replay-input/1791590816258-62446",
+    "input_sha256": {
+      "f00_color.bin": "fde338e699681ad2a307c618018ee02acbcaffca72efbea2e96facab05cef358",
+      "f00_depth.bin": "aca6509cc97e00981a0333adc6f446107ffa2de88303fe37eaa77f4d1e7f02c1",
+      "f00_mv.bin": "cfc9cd050b68d0df063f212f5e63eb0b9d16c01f0b79ae4b738e95a2568c2063",
+      "f01_color.bin": "5e31047daa8d09d5129b29c999f3be2fd7ed791fdf53393d5e874740e64cf7c9",
+      "f01_depth.bin": "845f62a1a8720402902bcc322e7359a46ff532e32b00894cbfb281a0e1ae6ee5",
+      "f01_mv.bin": "a28b08d8ec79abda49ad61d6e8572b7f3a01c131156960b712631592c19ed8ad",
+      "f02_color.bin": "1cf59eadb30b59aa70d1950ec87ef55854367fb3ae10c8b424c024db8c737450",
+      "f02_depth.bin": "d1b0caf3d37b041aacf8ea1b96afa295ea1b1129ca246e933c996d4b362ed09d",
+      "f02_mv.bin": "8daaaf3e6ad87737b93e0bc425bd1a2b99721eac41a376374e3adfb33db7f5f9",
+      "f03_color.bin": "46201976c83dce41bba1d64bf89779a30a94462350ed0238fc4a2a513fb11ceb",
+      "f03_depth.bin": "f488bcb77f68b6825ecf57bbf5e881344754ba0a24e81a4bbb48bd177ea1bf02",
+      "f03_mv.bin": "b4e38715e8c52f1a235665fba5f780c3dc4df990e4d8b98c13b0924be6f38581",
+      "f04_color.bin": "471f77b276edee275f09178b6793a5a1cfd07ad67e59c263766586fbbd04d006",
+      "f04_depth.bin": "08b2c461ee8d96f53ae82690a8c68718e43b1d8624537d7780b094a1f6382587",
+      "f04_mv.bin": "8907ed30518452052d4d6d35cdf1de03d6a9a06727fb9392a566776a8a526bf2",
+      "f05_color.bin": "1cc8ed6be10b81c2d0ea88585e2f9003ce4a7a3838a2cdacc43fdbf3dd60e892",
+      "f05_depth.bin": "6c274276ee3e3632c29267e33547d8acd4418764b912efbc68f0e429d5dc54af",
+      "f05_mv.bin": "cb9522b7b50bc2ca3e713dc8a96be099230a1ad44705272aee6aba6354d9d4b0",
+      "f06_color.bin": "03b5f9290c237194c56d394be62e7e656e9a90538e801eb190001393aec1906e",
+      "f06_depth.bin": "c0e275c80d82817d414378a8b29a4b82770db04fd63a41625a954afb8a7c4d3f",
+      "f06_mv.bin": "7f1669d0f1b3544b0875900d3aea6ccd0e30ad3dc5492903ab316f3325f771b9",
+      "f07_color.bin": "bcb1c68ea8508b1fe2c52a6aa6624041e800297cc9dccd74be361e5379451d39",
+      "f07_depth.bin": "51b51fda18eb40234afd4d7c199b2b1aca92319bf13132ad8a756364e83e752c",
+      "f07_mv.bin": "58f72d68b7e6f57d1fd65ad059be0ac299f6a277149341da59f42a219a542aeb",
+      "meta.json": "8479857f797e4b9f85ac8affa6931fd8232d4972adaad371f7da1d53e23ff2af"
+    },
+    "cli_sha256": "c156174e6ba1dcb932f259e685da525829648f9507ac5fe7be4574539f4d76c5",
+    "method": {
+      "measured_sequences_per_run": 30,
+      "frames_per_sequence": 8,
+      "warmup_sequences_per_run": 1,
+      "prewarm_sequences_per_variant": 6,
+      "balanced_orders": [
+        [
+          "before",
+          "final",
+          "exact-fast"
+        ],
+        [
+          "exact-fast",
+          "final",
+          "before"
+        ],
+        [
+          "final",
+          "exact-fast",
+          "before"
+        ],
+        [
+          "before",
+          "exact-fast",
+          "final"
+        ],
+        [
+          "exact-fast",
+          "before",
+          "final"
+        ],
+        [
+          "final",
+          "before",
+          "exact-fast"
+        ]
+      ],
+      "timing": "full frame command buffer; no diagnostic counters",
+      "reset": "fresh history per 8-frame sequence; reset frame included in headline mean"
+    },
+    "rounds": [
+      {
+        "variant": "before",
+        "at": "2026-10-14T19:15:42.900137+00:00",
+        "run": "build/quality-20261014/normal-power-bench/1-before",
+        "gpu_mean_ms": 2.9075187485432252,
+        "gpu_min_ms": 1.566583348903805,
+        "full_mean_ms": 4.171440971064537,
+        "reuse_mean_ms": 1.6435965260219139,
+        "non_reset_mean_ms": 2.6524505938314613,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 1
+      },
+      {
+        "variant": "final",
+        "at": "2026-10-14T19:15:44.321823+00:00",
+        "run": "build/quality-20261014/normal-power-bench/1-final",
+        "gpu_mean_ms": 2.8958020831244844,
+        "gpu_min_ms": 1.52749998960644,
+        "full_mean_ms": 4.167552778380923,
+        "reuse_mean_ms": 1.6240513878680456,
+        "non_reset_mean_ms": 2.640415475027458,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 1
+      },
+      {
+        "variant": "exact-fast",
+        "at": "2026-10-14T19:15:46.075537+00:00",
+        "run": "build/quality-20261014/normal-power-bench/1-exact-fast",
+        "gpu_mean_ms": 4.084792532861077,
+        "gpu_min_ms": 3.8508750149048865,
+        "full_mean_ms": 4.084792532861077,
+        "reuse_mean_ms": null,
+        "non_reset_mean_ms": 3.9821142843547497,
+        "measured_frames": 240,
+        "neural_runs": 240,
+        "reused_frames": 0,
+        "round": 1
+      },
+      {
+        "variant": "exact-fast",
+        "at": "2026-10-14T19:15:47.768737+00:00",
+        "run": "build/quality-20261014/normal-power-bench/2-exact-fast",
+        "gpu_mean_ms": 4.056648958309476,
+        "gpu_min_ms": 3.870875050779432,
+        "full_mean_ms": 4.056648958309476,
+        "reuse_mean_ms": null,
+        "non_reset_mean_ms": 3.96422539682438,
+        "measured_frames": 240,
+        "neural_runs": 240,
+        "reused_frames": 0,
+        "round": 2
+      },
+      {
+        "variant": "final",
+        "at": "2026-10-14T19:15:49.191503+00:00",
+        "run": "build/quality-20261014/normal-power-bench/2-final",
+        "gpu_mean_ms": 2.9041347222422096,
+        "gpu_min_ms": 1.5286249690689147,
+        "full_mean_ms": 4.186301042500418,
+        "reuse_mean_ms": 1.6219684019840013,
+        "non_reset_mean_ms": 2.6461414687912024,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 2
+      },
+      {
+        "variant": "before",
+        "at": "2026-10-14T19:15:50.605926+00:00",
+        "run": "build/quality-20261014/normal-power-bench/2-before",
+        "gpu_mean_ms": 2.8697732644407856,
+        "gpu_min_ms": 1.587499980814755,
+        "full_mean_ms": 4.107853126576326,
+        "reuse_mean_ms": 1.6316934023052454,
+        "non_reset_mean_ms": 2.6179994046244595,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 2
+      },
+      {
+        "variant": "final",
+        "at": "2026-10-14T19:15:52.007540+00:00",
+        "run": "build/quality-20261014/normal-power-bench/3-final",
+        "gpu_mean_ms": 2.880891145711454,
+        "gpu_min_ms": 1.5407499740831554,
+        "full_mean_ms": 4.146667705693592,
+        "reuse_mean_ms": 1.6151145857293159,
+        "non_reset_mean_ms": 2.6246055555973378,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 3
+      },
+      {
+        "variant": "exact-fast",
+        "at": "2026-10-14T19:15:53.722136+00:00",
+        "run": "build/quality-20261014/normal-power-bench/3-exact-fast",
+        "gpu_mean_ms": 4.101800521554348,
+        "gpu_min_ms": 3.8892499869689345,
+        "full_mean_ms": 4.101800521554348,
+        "reuse_mean_ms": null,
+        "non_reset_mean_ms": 4.005377977764944,
+        "measured_frames": 240,
+        "neural_runs": 240,
+        "reused_frames": 0,
+        "round": 3
+      },
+      {
+        "variant": "before",
+        "at": "2026-10-14T19:15:55.125616+00:00",
+        "run": "build/quality-20261014/normal-power-bench/3-before",
+        "gpu_mean_ms": 2.86991319420243,
+        "gpu_min_ms": 1.5830416814424098,
+        "full_mean_ms": 4.109699652569058,
+        "reuse_mean_ms": 1.6301267358358018,
+        "non_reset_mean_ms": 2.6176251983824406,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 3
+      },
+      {
+        "variant": "before",
+        "at": "2026-10-14T19:15:56.576271+00:00",
+        "run": "build/quality-20261014/normal-power-bench/4-before",
+        "gpu_mean_ms": 2.950539411782908,
+        "gpu_min_ms": 1.5736250206828117,
+        "full_mean_ms": 4.218065625658103,
+        "reuse_mean_ms": 1.6830131979077123,
+        "non_reset_mean_ms": 2.699090676781322,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 4
+      },
+      {
+        "variant": "exact-fast",
+        "at": "2026-10-14T19:15:58.317675+00:00",
+        "run": "build/quality-20261014/normal-power-bench/4-exact-fast",
+        "gpu_mean_ms": 4.134226043000429,
+        "gpu_min_ms": 3.883874975144863,
+        "full_mean_ms": 4.134226043000429,
+        "reuse_mean_ms": null,
+        "non_reset_mean_ms": 4.035218452779754,
+        "measured_frames": 240,
+        "neural_runs": 240,
+        "reused_frames": 0,
+        "round": 4
+      },
+      {
+        "variant": "final",
+        "at": "2026-10-14T19:15:59.734543+00:00",
+        "run": "build/quality-20261014/normal-power-bench/4-final",
+        "gpu_mean_ms": 2.8822456573834643,
+        "gpu_min_ms": 1.5450000064447522,
+        "full_mean_ms": 4.15825138479704,
+        "reuse_mean_ms": 1.6062399299698882,
+        "non_reset_mean_ms": 2.6245216251395287,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 4
+      },
+      {
+        "variant": "exact-fast",
+        "at": "2026-10-14T19:16:01.534930+00:00",
+        "run": "build/quality-20261014/normal-power-bench/5-exact-fast",
+        "gpu_mean_ms": 4.315648608462652,
+        "gpu_min_ms": 3.884624980855733,
+        "full_mean_ms": 4.315648608462652,
+        "reuse_mean_ms": null,
+        "non_reset_mean_ms": 4.198213688020284,
+        "measured_frames": 240,
+        "neural_runs": 240,
+        "reused_frames": 0,
+        "round": 5
+      },
+      {
+        "variant": "before",
+        "at": "2026-10-14T19:16:02.962295+00:00",
+        "run": "build/quality-20261014/normal-power-bench/5-before",
+        "gpu_mean_ms": 2.910806594203071,
+        "gpu_min_ms": 1.583250006660819,
+        "full_mean_ms": 4.158249996544328,
+        "reuse_mean_ms": 1.6633631918618146,
+        "non_reset_mean_ms": 2.6592783704732676,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 5
+      },
+      {
+        "variant": "final",
+        "at": "2026-10-14T19:16:04.444236+00:00",
+        "run": "build/quality-20261014/normal-power-bench/5-final",
+        "gpu_mean_ms": 2.9765980900265276,
+        "gpu_min_ms": 1.5391249908134341,
+        "full_mean_ms": 4.273443749116268,
+        "reuse_mean_ms": 1.6797524309367873,
+        "non_reset_mean_ms": 2.709967459806995,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 5
+      },
+      {
+        "variant": "final",
+        "at": "2026-10-14T19:16:06.005397+00:00",
+        "run": "build/quality-20261014/normal-power-bench/6-final",
+        "gpu_mean_ms": 3.372642188332975,
+        "gpu_min_ms": 1.5354999923147261,
+        "full_mean_ms": 4.876134025592667,
+        "reuse_mean_ms": 1.8691503510732825,
+        "non_reset_mean_ms": 3.05907361270372,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 6
+      },
+      {
+        "variant": "before",
+        "at": "2026-10-14T19:16:07.415625+00:00",
+        "run": "build/quality-20261014/normal-power-bench/6-before",
+        "gpu_mean_ms": 2.8807598934993925,
+        "gpu_min_ms": 1.5811249613761902,
+        "full_mean_ms": 4.12236076129678,
+        "reuse_mean_ms": 1.6391590257020046,
+        "non_reset_mean_ms": 2.6280079341848337,
+        "measured_frames": 240,
+        "neural_runs": 120,
+        "reused_frames": 120,
+        "round": 6
+      },
+      {
+        "variant": "exact-fast",
+        "at": "2026-10-14T19:16:09.149752+00:00",
+        "run": "build/quality-20261014/normal-power-bench/6-exact-fast",
+        "gpu_mean_ms": 4.174792013024368,
+        "gpu_min_ms": 3.89970833202824,
+        "full_mean_ms": 4.174792013024368,
+        "reuse_mean_ms": null,
+        "non_reset_mean_ms": 4.079455157486899,
+        "measured_frames": 240,
+        "neural_runs": 240,
+        "reused_frames": 0,
+        "round": 6
+      }
+    ],
+    "summary": {
+      "before": {
+        "gpu_mean_ms": {
+          "median": 2.894139321021309,
+          "mean": 2.8982185177786355,
+          "min": 2.8697732644407856,
+          "max": 2.950539411782908,
+          "stdev": 0.031297147638979096
+        },
+        "full_mean_ms": {
+          "median": 4.140305378920553,
+          "mean": 4.147945022284855,
+          "min": 4.107853126576326,
+          "max": 4.218065625658103,
+          "stdev": 0.043127193132597254
+        },
+        "reuse_mean_ms": {
+          "median": 1.6413777758619592,
+          "mean": 1.6484920132724155,
+          "min": 1.6301267358358018,
+          "max": 1.6830131979077123,
+          "stdev": 0.02070464363094155
+        },
+        "non_reset_mean_ms": {
+          "median": 2.6402292640081475,
+          "mean": 2.645742029712964,
+          "min": 2.6176251983824406,
+          "max": 2.699090676781322,
+          "stdev": 0.031461160477028044
+        }
+      },
+      "final": {
+        "gpu_mean_ms": {
+          "median": 2.899968402683347,
+          "mean": 2.9853856478035192,
+          "min": 2.880891145711454,
+          "max": 3.372642188332975,
+          "stdev": 0.19299157282690654
+        },
+        "full_mean_ms": {
+          "median": 4.17692691044067,
+          "mean": 4.301391781013485,
+          "min": 4.146667705693592,
+          "max": 4.876134025592667,
+          "stdev": 0.28520070456455854
+        },
+        "reuse_mean_ms": {
+          "median": 1.6230098949260234,
+          "mean": 1.6693795145935535,
+          "min": 1.6062399299698882,
+          "max": 1.8691503510732825,
+          "stdev": 0.10124201383189044
+        },
+        "non_reset_mean_ms": {
+          "median": 2.6432784719093303,
+          "mean": 2.71745419951104,
+          "min": 2.6245216251395287,
+          "max": 3.05907361270372,
+          "stdev": 0.17031598834531908
+        }
+      },
+      "exact-fast": {
+        "gpu_mean_ms": {
+          "median": 4.1180132822773885,
+          "mean": 4.144651446202058,
+          "min": 4.056648958309476,
+          "max": 4.315648608462652,
+          "stdev": 0.09318894937305972
+        },
+        "full_mean_ms": {
+          "median": 4.1180132822773885,
+          "mean": 4.144651446202058,
+          "min": 4.056648958309476,
+          "max": 4.315648608462652,
+          "stdev": 0.09318894937305972
+        },
+        "non_reset_mean_ms": {
+          "median": 4.020298215272349,
+          "mean": 4.0441008262051685,
+          "min": 3.96422539682438,
+          "max": 4.198213688020284,
+          "stdev": 0.0857921605457696
+        }
+      }
+    },
+    "paired_final_time_change_percent": {
+      "rounds": [
+        -0.4029781553295697,
+        1.1973579316246097,
+        0.3825185908480133,
+        -2.314619290517317,
+        2.26024964882523,
+        17.074741145332673
+      ],
+      "median": 0.7899382612363115,
+      "mean": 3.0328783117972735
+    },
+    "notes": [
+      "Median of six run means is the headline metric; all measurements, including the slower final run in round 6, are retained.",
+      "Low Power Mode disabled, but GPU frequency and temperature were not locked.",
+      "This measures the upscaler command buffer, not complete game frame time or game FPS."
+    ]
+  },
+  "previous_low_power_performance": {
+    "method": "Five interleaved before/final pairs, 15 measured eight-frame sequences each; noisier than the normal-power run.",
+    "rounds": [
+      {
+        "round": 1,
+        "variant": "before",
+        "gpu_mean_ms": 6.522152083925903,
+        "full_mean_ms": 9.463905556670701,
+        "reuse_mean_ms": 3.580398611181105
+      },
+      {
+        "round": 1,
+        "variant": "final",
+        "gpu_mean_ms": 6.542308678520688,
+        "full_mean_ms": 9.425722217808167,
+        "reuse_mean_ms": 3.658895139233209
+      },
+      {
+        "round": 2,
+        "variant": "final",
+        "gpu_mean_ms": 5.867420485204396,
+        "full_mean_ms": 8.511624306750795,
+        "reuse_mean_ms": 3.223216663657998
+      },
+      {
+        "round": 2,
+        "variant": "before",
+        "gpu_mean_ms": 6.13072847481817,
+        "full_mean_ms": 8.909139589134915,
+        "reuse_mean_ms": 3.352317360501426
+      },
+      {
+        "round": 3,
+        "variant": "before",
+        "gpu_mean_ms": 5.565338542995353,
+        "full_mean_ms": 8.166543058662986,
+        "reuse_mean_ms": 2.9641340273277215
+      },
+      {
+        "round": 3,
+        "variant": "final",
+        "gpu_mean_ms": 6.8848503472205875,
+        "full_mean_ms": 10.10925624674807,
+        "reuse_mean_ms": 3.6604444476931044
+      },
+      {
+        "round": 4,
+        "variant": "final",
+        "gpu_mean_ms": 6.023358327608245,
+        "full_mean_ms": 8.768729163178554,
+        "reuse_mean_ms": 3.277987492037937
+      },
+      {
+        "round": 4,
+        "variant": "before",
+        "gpu_mean_ms": 5.92647465527989,
+        "full_mean_ms": 8.576280554795327,
+        "reuse_mean_ms": 3.2766687557644523
+      },
+      {
+        "round": 5,
+        "variant": "before",
+        "gpu_mean_ms": 5.592617012734991,
+        "full_mean_ms": 8.300484028101588,
+        "reuse_mean_ms": 2.884749997368393
+      },
+      {
+        "round": 5,
+        "variant": "final",
+        "gpu_mean_ms": 5.81338611227693,
+        "full_mean_ms": 8.522768059629016,
+        "reuse_mean_ms": 3.104004164924845
+      }
+    ],
+    "median_gpu_mean_ms": {
+      "before": 5.92647465527989,
+      "final": 6.023358327608245
+    }
+  },
+  "validation": {
+    "make_targets": [
+      {
+        "target": "test",
+        "exit_code": 0,
+        "seconds": 11.221
+      },
+      {
+        "target": "test-fsr411-runtime",
+        "exit_code": 0,
+        "seconds": 83.917
+      },
+      {
+        "target": "test-fsr411-lossy",
+        "exit_code": 0,
+        "seconds": 8.617
+      },
+      {
+        "target": "test-fsr411-cadence",
+        "exit_code": 0,
+        "seconds": 5.128
+      },
+      {
+        "target": "test-fsr411-live",
+        "exit_code": 0,
+        "seconds": 12.573
+      },
+      {
+        "target": "test-fsr411-simd",
+        "exit_code": 0,
+        "seconds": 9.097
+      },
+      {
+        "target": "test-fsr411-chroma",
+        "exit_code": 0,
+        "seconds": 1.862
+      },
+      {
+        "target": "test-fsr411-cli",
+        "exit_code": 0,
+        "seconds": 6.113
+      },
+      {
+        "target": "test-fsr411-snapshot",
+        "exit_code": 0,
+        "seconds": 1.057
+      }
+    ],
+    "exact_game_output_parity": {
+      "exact": [
+        {
+          "capture": "1791590789976-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        },
+        {
+          "capture": "1791590799393-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        },
+        {
+          "capture": "1791590804458-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        },
+        {
+          "capture": "1791590816258-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        }
+      ],
+      "exact-fast": [
+        {
+          "capture": "1791590789976-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        },
+        {
+          "capture": "1791590799393-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        },
+        {
+          "capture": "1791590804458-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        },
+        {
+          "capture": "1791590816258-62446",
+          "frames": 8,
+          "identical_rgba_frames": 8
+        }
+      ]
+    },
+    "reuse_pre_equivalence": {
+      "comparisons": [
+        {
+          "scene": "1791590789976-62446",
+          "frames": 8,
+          "identical_rgb_frames": 8,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "1791590799393-62446",
+          "frames": 8,
+          "identical_rgb_frames": 8,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "1791590804458-62446",
+          "frames": 8,
+          "identical_rgb_frames": 8,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "1791590816258-62446",
+          "frames": 8,
+          "identical_rgb_frames": 8,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "dark_particles",
+          "frames": 32,
+          "identical_rgb_frames": 32,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "particles",
+          "frames": 32,
+          "identical_rgb_frames": 32,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "static",
+          "frames": 32,
+          "identical_rgb_frames": 32,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "wire_pan",
+          "frames": 32,
+          "identical_rgb_frames": 32,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        },
+        {
+          "scene": "wire_static",
+          "frames": 32,
+          "identical_rgb_frames": 32,
+          "max_abs": 0.0,
+          "mean_squared_difference": 0.0
+        }
+      ],
+      "scope": "Shared vs specialized PRE under identical quality rules; isolated optimization experiment. Final rules also passed optimized/unoptimized runtime tests."
+    },
+    "physical_devices": [
+      "Apple M5"
+    ],
+    "simd_note": "SIMD exercised on M5; no physical M1-M4 measurement."
+  },
+  "public_branch_integration": {
+    "release": "crossover-v1.6",
+    "base_commit": "6806bfe52b3cfb7e3ee0cf5916753cad6e4504a8",
+    "base_release": "crossover-v1.5",
+    "source_sha256": {
+      "tools/fsr411/lossy_shaders.py": "ecb85ad008c9671a9cdbe8ca7c8ca2dd8514a21bbdf9637448f5fa1aa58255d6",
+      "tools/compile_fsr411.py": "2b6924a493e7a80af1f68f244a5c217ce49a433fb512c6dbb09d3f91edaed583",
+      "src/fsr411_runtime.h": "aa5eac76aaa1f421b4d758a38017e31c91e97af72bb9986fe09d3f56037071d7",
+      "tools/fsr411/lossy.py": "ae67e882e0b8041cbd19497f0b2a633ddaa3529611a7426cc7176ca2ee77e49d",
+      "tools/gen_fsr411_native.py": "06710ec4ce0be5c0118b446229f43ff1d5587a22dd144a780584c4689db3531a",
+      "src/fsr411_simd.metal": "9d1fcb3cb7b0bdc865b05c691a8af0b04eb46e80d12cadf99e79e492b46fe481",
+      "tools/diagnostics/fsr411_quality_scenes.py": "9733ff007e4320e6b1c9af9a605899b191386a6b93824cc3c466493c5cd4255b",
+      "tools/bin/fsr4mac": "af99fff81912baae09b3fa7bfb933b1727d2b2eaf8da72cb36a7b4c98a126d89"
+    },
+    "network_and_simd_files_unchanged_from_base": {
+      "tools/fsr411/lossy.py": true,
+      "tools/gen_fsr411_native.py": true,
+      "src/fsr411_simd.metal": true,
+      "third_party/fsr411/initializers.bin": true,
+      "third_party/fsr411/initializers-ultraperformance.bin": true
+    },
+    "make_targets": [
+      {
+        "target": "tools/bin/fsr4mac",
+        "exit_code": 0,
+        "seconds": 2.742
+      },
+      {
+        "target": "test",
+        "exit_code": 0,
+        "seconds": 19.374
+      },
+      {
+        "target": "test-fsr411-runtime",
+        "exit_code": 0,
+        "seconds": 34.214
+      },
+      {
+        "target": "test-fsr411-lossy",
+        "exit_code": 0,
+        "seconds": 3.929
+      },
+      {
+        "target": "test-fsr411-cadence",
+        "exit_code": 0,
+        "seconds": 9.776
+      },
+      {
+        "target": "test-fsr411-live",
+        "exit_code": 0,
+        "seconds": 86.091
+      },
+      {
+        "target": "test-fsr411-simd",
+        "exit_code": 0,
+        "seconds": 91.812
+      },
+      {
+        "target": "test-fsr411-chroma",
+        "exit_code": 0,
+        "seconds": 12.625
+      },
+      {
+        "target": "test-fsr411-cli",
+        "exit_code": 0,
+        "seconds": 12.372
+      },
+      {
+        "target": "test-fsr411-snapshot",
+        "exit_code": 0,
+        "seconds": 7.021
+      }
+    ],
+    "development_output_parity": [
+      {
+        "profile": "lossy",
+        "capture": "1791590789976-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "lossy",
+        "capture": "1791590799393-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "lossy",
+        "capture": "1791590804458-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "lossy",
+        "capture": "1791590816258-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590789976-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590799393-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590804458-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact-fast",
+        "capture": "1791590816258-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590789976-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590799393-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590804458-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      },
+      {
+        "profile": "exact",
+        "capture": "1791590816258-62446",
+        "frames": 8,
+        "identical_rgba_frames": 8
+      }
+    ],
+    "scope": "Changes ported onto the public repository, retaining its installer and Winograd SIMD implementation; all 96 checked game RGBA outputs match the development build."
+  }
+}

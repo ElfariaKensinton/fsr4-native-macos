@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Generate Metal-portable PRE/POST for the pinned October 7 lossy policy.
+"""Generate Metal-portable PRE/POST with selected upstream temporal repairs.
 
 Fresh HLSL helpers operate on the MIT import. No GPL shader rewriter is
 included or executed. These transformations require the native POST-CNB
 cache; they preserve the exact imported files and a separate exact profile.
+The network's October 7 folding/rounding policy stays in lossy.py. The
+history rules below incorporate motion-boundary clamping and at-rest content
+tests documented through dll-2026-10-14; this is not whole-release parity.
 
 Host contract: b2 is four uints (skip, block width, block height, reserved).
 u12 is a dense uint4 per 4x4 output block (signed motion x/y, signed-depth
@@ -22,6 +25,8 @@ SCRATCH_BYTES = {1080: 20880256, 2160: 83232256, 4320: 332352256}
 CONSTANT_BYTES = 16
 MOTION_BYTES_PER_BLOCK = 16
 PLANE_BYTES_PER_BLOCK = 4
+TEMPORAL_REFERENCE_COMMIT = "9ab64571eda2d4f3a802b2b2e8c1bbe006da15da"
+TEMPORAL_REFERENCE_RELEASE = "dll-2026-10-14"
 
 
 def _tier(tier):
@@ -45,7 +50,7 @@ def _declarations(tier):
     idbits = 18 + 2 * index
     mantissa = 9 - 2 * index
     return """
-// Independent Metal storage for the dll-2026-10-07 lossy temporal policy.
+// Independent Metal storage; the original October 7 buffer ABI is retained.
 cbuffer Fsr411LossyConstants : register(b2)
 {
     uint lossySkip;
@@ -138,10 +143,11 @@ bool Fsr411LossyDifferentMotion(int2 a, int2 b)
     return max(difference.x, difference.y) > 1;
 }
 
-void Fsr411LossyClassify(int2 cell, uint4 own, out bool atRest, out bool uncovered)
+void Fsr411LossyClassify(int2 cell, uint4 own, out bool atRest, out bool uncovered,
+                       out bool otherMotion)
 {
     int2 displacement = asint(own.xy);
-    bool otherMotion = Fsr411LossyDifferentMotion(displacement,
+    otherMotion = Fsr411LossyDifferentMotion(displacement,
         asint(Fsr411LossyReadMotion(cell + (displacement >> 1)).xy));
     // The release probes in units of 2x2 output-pixel cells, not blocks.
     static const int2 offsets[8] = {
@@ -171,6 +177,40 @@ void Fsr411LossyClassify(int2 cell, uint4 own, out bool atRest, out bool uncover
         }
     }
 }
+
+float3 Fsr411LossyResolve(float3 current, float3 history, float3 minimum, float3 maximum,
+                         float networkWeight, bool atRest, bool otherMotion, bool uncovered)
+{
+    float currentWeight = networkWeight * networkWeight;
+    if (atRest)
+    {
+        float3 span = maximum - minimum;
+        float3 difference = abs(current - history);
+        // A zero motion vector does not imply unchanged colour: particles
+        // and translucent effects often have no vectors of their own.
+        bool changed = any(history < minimum) || any(history > maximum) ||
+                       any(difference > span * 0.25f + 0.05f);
+        [unroll] for (uint channel = 0u; channel < 3u; ++channel)
+        {
+            bool oneSided = abs(minimum[channel] + maximum[channel] - 2.0f * history[channel]) >
+                            span[channel] * 0.85f;
+            changed = changed || (oneSided && difference[channel] > span[channel] * 0.05f + 0.01f);
+        }
+        // Keep the original rest suppression on stable detail. A very high
+        // network weight is independent evidence that the history is stale.
+        float response = changed ? 1.0f : saturate((networkWeight - 0.95f) / 0.045f);
+        currentWeight *= response;
+    }
+    currentWeight = min(currentWeight, 1.0f);
+    float historyWeight = 1.0f - currentWeight;
+    float3 result = current * currentWeight + history * historyWeight;
+    // Uniform motion and rest must retain subpixel detail absent from the
+    // current samples. Only a motion boundary needs the tight history limit.
+    if (otherMotion)
+        result += (clamp(history, minimum, maximum) - history) * historyWeight;
+    bool darkEdge = all(history <= max(current * 0.1f, 0.0f));
+    return (darkEdge || uncovered) ? current : result;
+}
 """
 
 
@@ -191,6 +231,24 @@ def apply_lossy_pre(source, tier):
     source = _replace(source, history_store, history_store + "\n\n"
                       "    // The cached POST-CNB owns skipped frames; leave every neural tensor intact.\n"
                       "    if (lossySkip != 0u) return;")
+    return marker + source
+
+
+def reuse_only_pre(source):
+    """Specialize the skipped PRE so its unused neural inputs disappear.
+
+    This is a separate pipeline, selected by the host's existing cache-valid
+    decision. Preserve the constant-buffer layout and every history/motion
+    expression; DXC removes the unreachable network input and recurrent read.
+    """
+    marker = "// fsr411-generated-reuse-only-pre\n"
+    if source.startswith(marker):
+        return source
+    if "fsr411-generated-lossy-pre:" not in source:
+        raise ValueError("reuse-only PRE requires the lossy PRE transform")
+    source = _replace(source, "    uint lossySkip;", "    uint lossyUnused;")
+    declaration = "RWStructuredBuffer<uint4> Fsr411LossyMotion : register(u12);"
+    source = _replace(source, declaration, "static const uint lossySkip = 1u;\n" + declaration)
     return marker + source
 
 
@@ -220,11 +278,11 @@ def apply_lossy_post(source, tier):
     uint4 externalCnb = ScratchBuffer.Load4(%du + uint(iy) * %du + uint(ix) * 16u);
     uint packedVss[4] = {externalCnb.x, externalCnb.y, externalCnb.z, externalCnb.w};
     uint4 lossyOwn = uint4(0u, 0u, 0u, 0u);
-    bool lossyAtRest = false, lossyUncovered = false;
+    bool lossyAtRest = false, lossyUncovered = false, lossyOtherMotion = false;
     if (lossySkip != 0u)
     {
         lossyOwn = Fsr411LossyReadMotion(int2(ix, iy));
-        Fsr411LossyClassify(int2(ix, iy), lossyOwn, lossyAtRest, lossyUncovered);
+        Fsr411LossyClassify(int2(ix, iy), lossyOwn, lossyAtRest, lossyUncovered, lossyOtherMotion);
     }
 
 """ % (offset, stride)
@@ -261,18 +319,8 @@ def apply_lossy_post(source, tier):
     mix = "        float3 res = up * (1.0f - bf) + reproj * bf;"
     source = _replace(source, mix, mix + "\n" + r"""        if (lossySkip != 0u)
         {
-            // The release's SB_CONST=0 makes the jitter damping term zero:
-            // its current-frame weight is exactly (1 - historyWeight)^2.
-            float currentWeight = (1.0f - bf) * (1.0f - bf);
-            currentWeight = min(lossyAtRest ? 0.0f : currentWeight, 1.0f);
-            float historyWeight = 1.0f - currentWeight;
-            res = up * currentWeight + reproj * historyWeight;
-            float3 margin = (lossyMaximum - lossyMinimum) * 0.5f;
-            float3 limitedHistory = max(min(reproj, lossyMaximum + margin), lossyMinimum - margin);
-            res += (limitedHistory - reproj) * historyWeight;
-            bool darkEdge = all(reproj <= max(up * 0.1f, 0.0f));
-            if (darkEdge || lossyUncovered)
-                res = up;
+            res = Fsr411LossyResolve(up, reproj, lossyMinimum, lossyMaximum, 1.0f - bf,
+                                    lossyAtRest, lossyOtherMotion, lossyUncovered);
         }
 """)
     return marker + source
@@ -294,10 +342,10 @@ void Fsr411LossyClassifyCells(uint lane, uint2 groupId)
     uint local = lane - 192u;
     int2 cell = int2(groupId * 8u + uint2(local & 7u, local >> 3u));
     uint4 own = Fsr411LossyReadMotion(cell);
-    bool atRest, uncovered;
-    Fsr411LossyClassify(cell, own, atRest, uncovered);
+    bool atRest, uncovered, otherMotion;
+    Fsr411LossyClassify(cell, own, atRest, uncovered, otherMotion);
     Fsr411LossyCellMotion[local] = own.xy;
-    Fsr411LossyCellFlags[local] = (atRest ? 1u : 0u) | (uncovered ? 2u : 0u);
+    Fsr411LossyCellFlags[local] = (atRest ? 1u : 0u) | (uncovered ? 2u : 0u) | (otherMotion ? 4u : 0u);
 }
 """
 
@@ -324,9 +372,10 @@ def apply_lossy_post_cells(source):
                       "    GroupMemoryBarrierWithGroupSync();")
     source = _replace(source,
                       "        lossyOwn = Fsr411LossyReadMotion(int2(ix, iy));\n"
-                      "        Fsr411LossyClassify(int2(ix, iy), lossyOwn, lossyAtRest, lossyUncovered);",
+                      "        Fsr411LossyClassify(int2(ix, iy), lossyOwn, lossyAtRest, lossyUncovered, lossyOtherMotion);",
                       "        uint cellIndex = ((outputPixel.y >> 1u) & 7u) * 8u + ((outputPixel.x >> 1u) & 7u);\n"
                       "        lossyOwn.xy = Fsr411LossyCellMotion[cellIndex];\n"
                       "        lossyAtRest = (Fsr411LossyCellFlags[cellIndex] & 1u) != 0u;\n"
-                      "        lossyUncovered = (Fsr411LossyCellFlags[cellIndex] & 2u) != 0u;")
+                      "        lossyUncovered = (Fsr411LossyCellFlags[cellIndex] & 2u) != 0u;\n"
+                      "        lossyOtherMotion = (Fsr411LossyCellFlags[cellIndex] & 4u) != 0u;")
     return marker + source

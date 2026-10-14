@@ -23,7 +23,7 @@ from compile_variant import build_shadow_tree, parse_signature, patch_spv, wgsiz
 from fsr411.portability import apply_portability_fixes
 from fsr411_msl import buffer_integer_constants
 from fsr411.lossy import apply_hlsl_lossy
-from fsr411.lossy_shaders import apply_lossy_pre, apply_lossy_post, apply_lossy_post_cells
+from fsr411.lossy_shaders import apply_lossy_pre, apply_lossy_post, apply_lossy_post_cells, reuse_only_pre
 from fsr411.post_optimization import apply_post_optimization, POST_PIXELS_PER_GROUP
 from fsr411.autoexposure import split_autoexposure
 
@@ -134,6 +134,8 @@ def math_flags(name: str, profile: str, strict: bool = False) -> list[str]:
     `strict` (tests only, its own `_sm1` build) keeps additions ordered and
     unfused, so `--optimize 0/1` and the imported HLSL match bit for bit.
     """
+    if name == "pre_reuse":
+        name = "pre"
     if name not in ("pre", "post", "ae", "ae_finalize"):
         return []
     if name in ("pre", "post") and profile in FAST_MATH_PROFILES:
@@ -258,6 +260,12 @@ def build(args) -> dict:
     stages += [{"name": "ae", "index": -1, "source": "ae_tiles.hlsl"},
                {"name": "ae_finalize", "index": -1, "source": "ae_finalize.hlsl"},
                {"name": "rcas", "index": 27, "source": "rcas.hlsl"}]
+    # Ultra Performance never reuses inference. Keep optimize=0 as the
+    # original shared PRE for numerical and timing comparisons.
+    separate_reuse_pre = args.profile == "lossy" and args.optimize and not args.ultra_performance
+    if separate_reuse_pre:
+        (hlsl / "pre_reuse.hlsl").write_text(reuse_only_pre((hlsl / stages[0]["source"]).read_text()))
+        stages.append({"name": "pre_reuse", "index": -1, "source": "pre_reuse.hlsl"})
     toolroot = root / "tools/bin"
     kernels = previous.get("kernels", {})
     def save_manifest():
@@ -265,6 +273,7 @@ def build(args) -> dict:
                   "scratch_bytes": imported["scratch_arena"]["size"],
                   "post_pixels_per_group": POST_PIXELS_PER_GROUP if args.optimize and args.external_post_cnb else 32,
                   "auto_exposure_dispatches": 2,
+                  "separate_reuse_pre": bool(separate_reuse_pre),
                   "order": [s["name"] for s in stages if 0 <= s["index"] <= 26],
                   "kernels": kernels}
         temp = manifest_path.with_suffix(".tmp")
@@ -277,12 +286,14 @@ def build(args) -> dict:
     def kernel_cache_dir(stage, source):
         name = stage["name"]
         relevant = ({k: options[k] for k in ("tier", "depth_inverted", "low_res_mv", "jittered_mv", "colorspace", "auto_exposure", "optimize")}
-                    if name == "pre" else {"colorspace": args.colorspace} if name == "post"
+                    if name in ("pre", "pre_reuse") else {"colorspace": args.colorspace} if name == "post"
                     else {"colorspace": args.colorspace, "auto_exposure": args.auto_exposure} if name == "rcas" else {})
         identity = (shared_digest + name + json.dumps(relevant, sort_keys=True) + source
                     + json.dumps(math_flags(name, args.profile, strict)))
         return kernel_cache / hashlib.sha256(identity.encode()).hexdigest()
     only = set(args.only or [s["name"] for s in stages])
+    if separate_reuse_pre and "pre" in only:
+        only.add("pre_reuse")
     unknown = only - {s["name"] for s in stages}
     if unknown:
         raise ValueError(f"unknown stages: {sorted(unknown)}")

@@ -379,7 +379,12 @@ public:
                     else if (name == "post") groups = MTLSizeMake(ceil_div(p.alignedUW,session->postPixelsPerGroup),ceil_div(p.alignedUH,session->postPixelsPerGroup),1);
                     else if (name.rfind("pad",0) == 0) groups = MTLSizeMake(padding_groups(tier,std::atoi(name.c_str()+3),p.alignedUW,p.alignedUH),1,1);
                     else { const int shift = pass_shift(pass); groups = MTLSizeMake(ceil_div(p.alignedUW >> shift,64),p.alignedUH >> shift,1); }
-                    dispatch(enc, m4, *slot, *session, name, groups, b);
+                    // Older precompiled bundles use the shared PRE. New
+                    // bundles specialize only the already-authorized reuse
+                    // path, with its own bindings on both Metal APIs.
+                    const std::string stage = skip && name=="pre" && session->kernels.count("pre_reuse")
+                        ? "pre_reuse" : name;
+                    dispatch(enc, m4, *slot, *session, stage, groups, b);
                 }
                 const auto capture = view.captures.find(name);
                 if (capture != view.captures.end()) {
@@ -981,7 +986,7 @@ private:
         if(name=="Fsr411LossyMotion") return {b.view->lossyMotion,0};
         if(name=="Fsr411LossyPlane") return {b.view->lossyPlane,0};
         if(name=="InitializerBuffer" || name=="t18_initializer") return {s.initializer,0};
-        if(name=="MLSR_Optimized_Constants") return {slot.constants,(stage=="pre" || stage=="post")?0:kTensor};
+        if(name=="MLSR_Optimized_Constants") return {slot.constants,(stage=="pre" || stage=="pre_reuse" || stage=="post")?0:kTensor};
         if(name=="CsTensorSizes") return {slot.constants,kTensor};
         if(name=="AutoExposureSPDConstants") return {slot.constants,kSpd};
         if(name=="cbRCAS") return {slot.constants,kRcas};
@@ -989,7 +994,7 @@ private:
         [NSException raise:@"FSR411Binding" format:@"Unknown buffer %s",name.c_str()]; return {nil,0};
     }
     void dispatch(id __strong &enc,bool m4,FrameSlot &slot,const Session &s,const std::string &name,MTLSize groups,const Bindings &b) {
-        if(slot.stageProfiler) slot.stageProfiler->begin_stage(enc,name);
+        if(slot.stageProfiler) slot.stageProfiler->begin_stage(enc,name=="pre_reuse"?"pre":name);
         const auto &k=s.kernels.at(name);
         if(m4) {
             id<MTL4ArgumentTable> t=slot.tables[ns(name)];

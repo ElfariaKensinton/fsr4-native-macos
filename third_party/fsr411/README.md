@@ -108,10 +108,9 @@ of the twelve affected common shader variants. Its reference DLL, chunks
 and GPL rewriters are not build inputs and are not distributed here.
 
 Skipped frames use the saved POST-CNB result reprojected with rounded block
-motion, select the correct last-layer coefficients for odd-pixel motion,
-and apply the release's history/edge/rest/occlusion repairs. The release
-default `SB_CONST=0` makes the current-frame blend weight `(1-a)^2`; the
-earlier jitter-distance exponential has no effect at this setting.
+motion and select the correct last-layer coefficients for odd-pixel motion.
+The base release's `SB_CONST=0` makes the current-frame blend weight
+`(1-a)^2`; the earlier jitter-distance exponential has no effect at this setting.
 Dedicated Metal buffers replace the reference DLL's scratch aliases, and
 the ownership plane is cleared on every skipped frame, including unusual
 consecutive negative-jitter frames. A valid cache is required; resets and
@@ -123,3 +122,25 @@ end-to-end parity with the Windows release or visual quality in games.
 Dense matrix kernels do not skip zero-weight arithmetic; the primary
 expected saving is the avoided model dispatch on selected frames, to be
 measured on the actual Apple GPU.
+
+### Selected temporal updates, 2026-10-14
+
+The network above is unchanged. Independently implemented history rules in
+`tools/fsr411/lossy_shaders.py` now use the published descriptions at revision
+`9ab64571eda2d4f3a802b2b2e8c1bbe006da15da` (`dll-2026-10-14`):
+
+- Clamp history only beside different motion, to the current samples' range.
+  Rest and uniform motion keep subpixel detail that the current samples miss.
+- At rest, detect colour changes outside the samples' range, sufficiently
+  large differences, and smaller one-sided differences. A high network
+  weight also allows a changed effect to update without motion vectors.
+- Compile a separate reused-frame PRE. The host retains its cache-validity
+  decision and the original PRE fallback for older compiled bundles.
+
+This is a selective Metal adaptation, not a full import of the release.
+It does not import its new folds, quantizers, fine-motion storage, persistence,
+dead band, exposure-step rules or recurrent-memory adjustment. The latter
+increased error on the local moving-object scene and was excluded.
+Source HLSL, initializers and native network parameters stay unchanged.
+See [quality measurements](../../docs/FSR411_QUALITY_UPDATE.md) for gains,
+remaining tradeoffs, performance conditions and reproducible checks.

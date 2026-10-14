@@ -105,7 +105,7 @@ static bool different(const Word &a, const Word &b) {
     return std::abs(signed_int(a[0]) - signed_int(b[0])) >= 2 || std::abs(signed_int(a[1]) - signed_int(b[1])) >= 2;
 }
 
-static std::array<bool, 2> classify_oracle(Cell cell, const Dimensions &d, const Policy &p, const Oracle &oracle) {
+static std::array<bool, 3> classify_oracle(Cell cell, const Dimensions &d, const Policy &p, const Oracle &oracle) {
     const auto read = [&](int x, int y) -> const Word & {
         x = std::max(0, std::min(int(d.w / 2) - 1, x));
         y = std::max(0, std::min(int(d.h / 2) - 1, y));
@@ -127,7 +127,7 @@ static std::array<bool, 2> classify_oracle(Cell cell, const Dimensions &d, const
             uncovered = surface[3] && floating(surface[2]) < floating(own[2]) && different(surface, own);
         }
     }
-    return {dx == 0 && dy == 0 && !movingNeighbor, uncovered};
+    return {dx == 0 && dy == 0 && !movingNeighbor, uncovered, movingNeighbor};
 }
 
 struct Fixture {
@@ -264,8 +264,8 @@ struct Fixture {
         for (size_t i=0;i<cells.size();++i) {
             const auto cell=cells[i];
             const Word own=skip?expected.motion[unsigned(cell[1]/2)*p.blocksW+unsigned(cell[0]/2)]:Word{0,0,0,0};
-            const auto classification=skip?classify_oracle(cell,d,p,expected):std::array<bool,2>{false,false};
-            require(actual[i*9]==Word{own[0],own[1],unsigned(classification[0]),unsigned(classification[1])},
+            const auto classification=skip?classify_oracle(cell,d,p,expected):std::array<bool,3>{false,false,false};
+            require(actual[i*9]==Word{own[0],own[1],unsigned(classification[0]),unsigned(classification[1])+2u*unsigned(classification[2])},
                     std::string(name)+": classification mismatch cell="+std::to_string(i));
             for (unsigned pk=0;pk<4;++pk) {
                 const int px=cell[0]*2+int(pk%2),py=cell[1]*2+int(pk/2);
@@ -279,6 +279,58 @@ struct Fixture {
         }
         for (size_t i=cells.size()*9;i<results.size();++i) require(actual[i]==results[i],std::string(name)+": results overrun");
         ++cases;
+    } }
+
+    void test_blend() { @autoreleasepool {
+        struct Input {
+            float current[3], weight;
+            float history[3]; uint32_t flags;
+            float minimum[3], reserved0;
+            float maximum[3], reserved1;
+        };
+        static_assert(sizeof(Input)==64,"Quality fixture ABI");
+        struct Example { const char *name; float current, history, minimum, maximum, weight; uint32_t flags; float expected; };
+        // Hand-computed examples of the image contract, independent of the
+        // shader's conditions: stable detail, missed wires, motion edges and
+        // effects without vectors. Flags: rest=1, other motion=2, uncovered=4.
+        const Example examples[]={
+            {"stable history at rest", .4f,.41f,.3f,.5f,.4f,1,.41f},
+            {"missing subpixel wire at rest", .2f,.6f,.2f,.2f,.1f,1,.596f},
+            {"missing subpixel wire under a pan", .2f,.6f,.2f,.2f,.1f,0,.596f},
+            {"tight limit at a motion boundary", .35f,.8f,.2f,.4f,.2f,2,.398f},
+            {"bright effect without vectors", .55f,.2f,.2f,.6f,.5f,1,.2875f},
+            {"dark effect without vectors", .18f,.4f,.1f,.4f,.5f,1,.345f},
+            {"one-sided dim change", .36f,.4f,.1f,.4f,.5f,1,.39f},
+            {"centred grain remains suppressed", .435f,.4f,.1f,.7f,.5f,1,.4f},
+            {"confident network verdict", .41f,.4f,.2f,.6f,1.f,1,.41f},
+            {"uncovered surface uses current", .55f,.2f,.1f,.7f,0.f,4,.55f},
+            {"invalid dark edge uses current", .5f,.01f,.1f,.7f,.5f,0,.5f},
+        };
+        std::vector<Input> input;
+        for(const auto &e:examples)
+            input.push_back({{e.current,e.current*.7f,e.current*1.3f},e.weight,
+                {e.history,e.history*.7f,e.history*1.3f},e.flags,
+                {e.minimum,e.minimum*.7f,e.minimum*1.3f},0,
+                {e.maximum,e.maximum*.7f,e.maximum*1.3f},0});
+        Dimensions d{}; d.queries=unsigned(input.size());
+        std::vector<std::array<float,4>> initial(input.size()+2,{-999.f,-999.f,-999.f,-999.f});
+        auto output=buffer(initial.data(),initial.size()*sizeof(initial[0]));
+        NSDictionary *buffers=@{@"QaFrame":buffer(&d,sizeof d),@"QaBlends":buffer(input.data(),input.size()*sizeof(Input)),
+            @"QaBlendResults":output};
+        auto command=[queue commandBuffer];auto encoder=[command computeCommandEncoder];
+        encode(encoder,@"qa_resolve",buffers,@{},unsigned(input.size()+2));
+        [encoder endEncoding];[command commit];[command waitUntilCompleted];
+        require(command.status==MTLCommandBufferStatusCompleted,"Quality fixture GPU command failed");
+        const auto actual=static_cast<const std::array<float,4> *>(output.contents);
+        const float scales[]={1.f,.7f,1.3f};
+        for(size_t i=0;i<input.size();++i) {
+            for(unsigned c=0;c<3;++c)
+                require(std::isfinite(actual[i][c]) && std::abs(actual[i][c]-examples[i].expected*scales[c])<2e-6f,
+                    std::string(examples[i].name)+": channel="+std::to_string(c)+" got="+std::to_string(actual[i][c]));
+            require(actual[i][3]==1.f,"Quality fixture alpha");
+            ++cases;
+        }
+        for(size_t i=input.size();i<initial.size();++i) require(actual[i]==initial[i],"Quality fixture overrun");
     } }
 };
 
@@ -294,6 +346,7 @@ int main(int argc,char **argv) { @autoreleasepool {
     fixture.test("zero-depth owner masks occlusion",0,0,4);
     fixture.test("negative-zero owner",0,0,5);
     fixture.test("full frame ignores motion cache",3,-1,0,false);
+    fixture.test_blend();
     std::printf("lossy shader QA tier=%u inverted=%d low-res=%d: %zu cases, %zu assertions passed\n",
                 [fixture.metadata[@"tier"] unsignedIntValue],fixture.inverted,fixture.low,cases,checks);
     return 0;
