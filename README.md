@@ -63,6 +63,10 @@ python3 tools/crossover/crossover_fsr4.py restore --bottle "/path/to/cxbottle.co
 
 More: [CrossOver details](docs/CROSSOVER.md).
 
+DXMT's DLSS/NGX temporal path can use the same FSR hook with an opt-in
+upstream patch. It also supports forcing the render dimensions returned to
+games that honor NGX optimal settings; see [DXMT setup](docs/DXMT.md).
+
 ## Standalone run on test frames
 
 ```sh
@@ -95,6 +99,7 @@ Build the installer app and DMG: `make installer INSTALLER_VERSION=v1.7`
 | Benchmark method | [BENCHMARK.md](BENCHMARK.md) |
 | Input format | [docs/FSR411_INPUT_CONTRACT.md](docs/FSR411_INPUT_CONTRACT.md) |
 | GPU profiling | [docs/FSR411_PROFILING.md](docs/FSR411_PROFILING.md) |
+| DXMT setup and custom render size | [docs/DXMT.md](docs/DXMT.md) |
 | Current status and limits | [docs/STATE.md](docs/STATE.md) |
 | Model sources | [third_party/fsr411/README.md](third_party/fsr411/README.md) |
 | Old FSR 4.0.2 model | [architecture](docs/FSR402_ARCHITECTURE.md), [guide](docs/GUIDE_FSR402.md) |

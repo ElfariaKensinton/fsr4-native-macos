@@ -1,0 +1,104 @@
+diff --git a/src/nvngx/nvngx.cpp b/src/nvngx/nvngx.cpp
+index 1b353e8..3adef37 100644
+--- a/src/nvngx/nvngx.cpp
++++ b/src/nvngx/nvngx.cpp
+@@ -7,6 +7,7 @@
+ #include "../d3d11/d3d11_interfaces.hpp"
+ #include "../dxgi/dxgi_interfaces.h"
+ #include <cmath>
++#include <cstdlib>
+ 
+ namespace dxmt {
+ Logger Logger::s_instance("nvngx.log");
+@@ -236,8 +237,42 @@ NVNGX_DLSS_GetOptimalSettingsCallback(NVNGXParameter *params) {
+     break;
+   }
+ 
+-  out_width = std::ceil(width * scale);
+-  out_height = std::ceil(height * scale);
++  // Optional FSR4 override. DXMT's optimal-settings callback is the point at
++  // which DLSS clients choose their actual render dimensions; changing only
++  // the MetalFX descriptor later would mislabel full-resolution textures.
++  bool render_override = false;
++  const char *forced_width = std::getenv("FSR4_DXMT_RENDER_WIDTH");
++  const char *forced_height = std::getenv("FSR4_DXMT_RENDER_HEIGHT");
++  if (forced_width || forced_height) {
++    char *width_end = nullptr;
++    char *height_end = nullptr;
++    const unsigned long requested_width = forced_width ? std::strtoul(forced_width, &width_end, 10) : 0;
++    const unsigned long requested_height = forced_height ? std::strtoul(forced_height, &height_end, 10) : 0;
++    const bool width_valid = !forced_width || (width_end != forced_width && *width_end == '\0'
++        && requested_width >= std::ceil(width / 3.0) && requested_width <= width);
++    const bool height_valid = !forced_height || (height_end != forced_height && *height_end == '\0'
++        && requested_height >= std::ceil(height / 3.0) && requested_height <= height);
++    if (width_valid && height_valid) {
++      if (forced_width && forced_height) {
++        out_width = static_cast<unsigned int>(requested_width);
++        out_height = static_cast<unsigned int>(requested_height);
++        scale = out_width / static_cast<float>(width);
++      } else if (forced_width) {
++        out_width = static_cast<unsigned int>(requested_width);
++        scale = out_width / static_cast<float>(width);
++        out_height = std::ceil(height * scale);
++      } else {
++        out_height = static_cast<unsigned int>(requested_height);
++        scale = out_height / static_cast<float>(height);
++        out_width = std::ceil(width * scale);
++      }
++      render_override = true;
++    }
++  }
++  if (!render_override) {
++    out_width = std::ceil(width * scale);
++    out_height = std::ceil(height * scale);
++  }
+ 
+   params->Set(NVNGX_Parameter_Scale, scale);
+   params->Set(NVNGX_Parameter_SuperSampling_ScaleFactor, scale);
+@@ -245,11 +280,13 @@ NVNGX_DLSS_GetOptimalSettingsCallback(NVNGXParameter *params) {
+   params->Set(NVNGX_Parameter_OutHeight, out_height);
+   params->Set(NVNGX_Parameter_Sharpness, 0.0f);
+ 
+-  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Min_Render_Width, (unsigned int)std::ceil(width / 3));
+-  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Min_Render_Height, (unsigned int)std::ceil(height / 3));
++  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Min_Render_Width,
++      render_override ? out_width : (unsigned int)std::ceil(width / 3));
++  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Min_Render_Height,
++      render_override ? out_height : (unsigned int)std::ceil(height / 3));
+ 
+-  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Max_Render_Width, width);
+-  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Max_Render_Height, height);
++  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Max_Render_Width, render_override ? out_width : width);
++  params->Set(NVNGX_Parameter_DLSS_Get_Dynamic_Max_Render_Height, render_override ? out_height : height);
+ 
+   params->Set("DLSSMode", 1);
+ 
+diff --git a/src/winemetal/unix/winemetal_unix.c b/src/winemetal/unix/winemetal_unix.c
+index 3327b29..a92b8c3 100644
+--- a/src/winemetal/unix/winemetal_unix.c
++++ b/src/winemetal/unix/winemetal_unix.c
+@@ -1417,8 +1417,24 @@ static const int SIGNALS[] = {
+ #endif
+ };
+ 
++static void
++fsr4_load_hook(void) {
++  static dispatch_once_t once;
++  dispatch_once(&once, ^{
++    const char *path = getenv("FSR4_DXMT_HOOK");
++    if (!path || !path[0])
++      return;
++    void *handle = dlopen(path, RTLD_NOW | RTLD_LOCAL);
++    if (!handle)
++      NSLog(@"[fsr4] DXMT hook load failed: %s", dlerror());
++    else
++      NSLog(@"[fsr4] DXMT hook loaded: %s", path);
++  });
++}
++
+ static NTSTATUS
+ _MTLDevice_newTemporalScaler(void *obj) {
++  fsr4_load_hook();
+   struct unixcall_mtldevice_newfxtemporalscaler *params = obj;
+   MTLFXTemporalScalerDescriptor *desc = [[MTLFXTemporalScalerDescriptor alloc] init];
+   const struct WMTFXTemporalScalerInfo *info = params->info.ptr;

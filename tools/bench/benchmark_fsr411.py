@@ -81,8 +81,11 @@ def load_plan(path):
 
 
 def command_for(variant, output, bench):
+    backend = variant.get("backend", "i8mpp")
+    if backend not in ("i8mpp", "simd", "scalar", "reference"):
+        raise ValueError(variant.get("name", "variant") + ": unsupported backend " + str(backend))
     return [variant["binary"], "--fsr-version", "4.1.1", "--root", variant["root"],
-            "--builddir", variant["builddir"], "--no-compile", "--i8mpp",
+            "--builddir", variant["builddir"], "--no-compile", "--" + backend,
             "--profile", variant["profile"], variant["input"], str(output), "--bench", str(bench)]
 
 
@@ -99,8 +102,10 @@ def summarize(rows):
 
 def read_measurements(path, variant, bench):
     run = json.loads(path.read_text())
+    expected_backend = {"i8mpp": "int8-mpp", "simd": "int8-simd",
+                        "scalar": "int8-scalar", "reference": "int8-reference"}[variant.get("backend", "i8mpp")]
     if (run.get("fsr_version") != "4.1.1" or run.get("profile") != variant["profile"]
-            or run.get("backend") != "int8-mpp"):
+            or run.get("backend") != expected_backend):
         raise ValueError(str(path) + ": unexpected model, profile or backend")
     if (run.get("timing_scope") != "full frame command buffer"
             or run.get("diagnostic_gpu_counters") or run.get("diagnostic_gpu_copies")
@@ -159,64 +164,4 @@ def main():
     parser.add_argument("--bench", type=int, default=30, help="measured sequences per variant per round")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    if args.rounds < 1 or args.bench < 1:
-        parser.error("--rounds and --bench must be positive")
-    plan_path, output = args.plan.resolve(), args.output.resolve()
-    plan = load_plan(plan_path)
-    schedule = []
-    for round_index in range(args.rounds):
-        variants = plan["variants"] if round_index % 2 == 0 else list(reversed(plan["variants"]))
-        schedule.extend((round_index + 1, variant) for variant in variants)
-    if args.dry_run:
-        for round_number, variant in schedule:
-            run_dir = output / f'{variant["name"]}-r{round_number}'
-            print(json.dumps({"round": round_number, "variant": variant["name"],
-                              "command": command_for(variant, run_dir, args.bench)}))
-        return
-    if output.exists() and any(output.iterdir()):
-        raise ValueError("output directory must be empty: " + str(output))
-    output.mkdir(parents=True, exist_ok=True)
-    write_json(output / "plan.json", plan)
-    results = []
-    for round_number, variant in schedule:
-        stem = f'{variant["name"]}-r{round_number}'
-        run_dir, log_path = output / stem, output / (stem + ".log")
-        command = command_for(variant, run_dir, args.bench)
-        started = time.time()
-        record = {"variant": variant["name"], "round": round_number, "profile": variant["profile"],
-                  "command": command, "cwd": variant["root"], "started_unix": started,
-                  "binary_sha256": sha256(variant["binary"]), "power": power_state(),
-                  "run_json": str(run_dir / "run.json"), "log": str(log_path)}
-        if "source_hash" in variant:
-            record["source_hash"] = variant["source_hash"]
-        print(f'{stem}: starting {args.bench} measured sequences', flush=True)
-        with log_path.open("w") as log:
-            completed = subprocess.run(command, cwd=variant["root"], stdout=log, stderr=subprocess.STDOUT)
-        record.update(wall_seconds=time.time() - started, returncode=completed.returncode)
-        if completed.returncode:
-            write_json(output / "failed_run.json", record)
-            raise RuntimeError(f'{stem} exited {completed.returncode}; see {log_path}')
-        run, rows = read_measurements(run_dir / "run.json", variant, args.bench)
-        record["device"] = run.get("device")
-        groups = {"all": rows, "reset": [row for row in rows if row["effective_reset"]],
-                  "full": [row for row in rows if not row["effective_reset"] and not row["skipped_inference"]],
-                  "reuse": [row for row in rows if not row["effective_reset"] and row["skipped_inference"]]}
-        record.update({group: summarize(group_rows) for group, group_rows in groups.items()})
-        if groups["full"] and groups["reuse"]:
-            record["steady_equal_mean_ms"] = (record["full"]["mean_ms"] + record["reuse"]["mean_ms"]) / 2
-        results.append(record)
-        write_json(output / "runs.json", results)
-        print(json.dumps({key: record[key] for key in ("variant", "round", *GROUPS)}), flush=True)
-    summary = round_summary(results, plan["variants"])
-    write_json(output / "summary.json", {"protocol": PROTOCOL, "rounds": args.rounds,
-               "sequences_per_round": args.bench, "plan_path": str(plan_path), "plan": plan,
-               "summary": summary, "runs": results})
-    print(json.dumps(summary, indent=2), flush=True)
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
-        print("FSR 4.1.1 benchmark: " + str(error), file=sys.stderr)
-        raise SystemExit(1)
+    if args.rounds < 1 or args.bench
