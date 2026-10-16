@@ -87,6 +87,9 @@ bool options_for(const Fsr4LiveFrameV2 &f,fsr411::Frame &frame,fsr411::Options &
     int compile=1;
     if(!parse_flag("FSR4_COMPILE",compile,error))return false;
     o.allowCompile=compile;
+    int liteReuse=1;
+    if(!parse_flag("FSR4_LITE_REUSE",liteReuse,error))return false;
+    o.liteReuse=liteReuse!=0;
     int rcas=0; fsr4_live_get_sharpness(&o.sharpness,&rcas); o.rcas=rcas;
     return true;
 }

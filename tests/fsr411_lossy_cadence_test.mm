@@ -103,7 +103,9 @@ struct Harness {
                 require(queue4!=nil && completed!=nil,"Metal 4 queue/event allocation failed");
             } else throw std::runtime_error("Metal 4 requires macOS 26");
         }
-        options.backend=fsr411::Backend::Native;
+        // Exercise the production backend on the test host (MPP on Apple10+,
+        // SIMD on M1–M4) so temporal scheduling is covered on older Macs too.
+        options.backend=fsr411::Backend::Auto;
         options.profile=fsr411::Profile::Lossy;
         options.allowCompile=compile;options.optimize=optimize;
     }
@@ -430,9 +432,9 @@ int main(int argc,char **argv) { @autoreleasepool { try {
     h.run("after failure refresh",f,-.25f,true);
 
     h.run("refresh before narrow input",f,.25f,false);
-    auto narrow=f;narrow.input.rw=63;
-    h.run("under half width",narrow,-.25f,false);
-    h.run("under half width repeated",narrow,-.25f,false);
+    auto narrow=f;narrow.input.rw=41;
+    h.run("below 3x scale limit",narrow,-.25f,false);
+    h.run("below 3x scale repeated",narrow,-.25f,false);
     auto shortInput=f;shortInput.input.rh=31;
     h.run("width-only eligibility",shortInput,-.25f,true);
     h.run("width-only refresh",shortInput,-.25f,false);
@@ -451,12 +453,17 @@ int main(int argc,char **argv) { @autoreleasepool { try {
     h.run("after logical resize",cropped,-.25f,true);
     auto wider=frame(device,64,32,129,64);
     h.run("aligned allocation resize",wider,-.25f,false,FSR4_INPUT_RESET_OUTPUT_SIZE);
-    h.run("aligned width threshold",wider,-.25f,false);
+    h.run("aligned width reuse",wider,-.25f,true);
 
     if(!withoutUp) {
         h.options.ultraPerformance=true;
         h.run("Ultra Performance change",f,-.25f,false,FSR4_INPUT_RESET_MODEL);
-        h.run("Ultra Performance never skips",f,-.25f,false);
+        h.run("Ultra Performance reuses",f,-.25f,true);
+        h.run("Ultra Performance refreshes",f,-.25f,false);
+        auto highScale=frame(device,42,21,128,64);
+        h.view.invalidate();
+        h.run("3x Ultra Performance resize",highScale,-.25f,false);
+        h.run("3x Ultra Performance reuses",highScale,-.25f,true);
         h.options.ultraPerformance=false;
         h.run("return from Ultra Performance",f,-.25f,false,FSR4_INPUT_RESET_MODEL);
         h.run("normal cache refreshed",f,-.25f,true);

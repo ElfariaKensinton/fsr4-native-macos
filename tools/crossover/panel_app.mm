@@ -127,7 +127,7 @@ static bool write_capture_request(NSString **reason) {
     return false;
 }
 
-@interface PanelApp : NSObject <NSApplicationDelegate>
+@interface PanelApp : NSObject <NSApplicationDelegate, NSTextFieldDelegate>
 @property(nonatomic, strong) NSPanel *panel;
 @property(nonatomic, strong) NSTextField *status, *res, *frame, *sharpVal;
 @property(nonatomic, strong) NSSlider *slider;
@@ -135,6 +135,7 @@ static bool write_capture_request(NSString **reason) {
 @property(nonatomic, strong) NSSegmentedControl *profile;
 @property(nonatomic, strong) NSTextField *profileHint;
 @property(nonatomic, strong) NSTextField *renderWidthField, *renderHeightField, *renderHint;
+@property(nonatomic, strong) NSPopUpButton *renderPreset;
 @property(nonatomic, strong) NSString *settingsError;
 @property(nonatomic, strong) NSButton *captureButton;
 @property(nonatomic, strong) NSTextField *captureMessage;
@@ -154,8 +155,18 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     return t;
 }
 
+static bool dimension_value(NSTextField *field, int &value) {
+    NSString *text = [field.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+    if (!text.length) return false;
+    NSScanner *scanner = [NSScanner scannerWithString:text];
+    long long parsed = 0;
+    if (![scanner scanLongLong:&parsed] || !scanner.isAtEnd || parsed < 0 || parsed > 8192) return false;
+    value = (int)parsed;
+    return true;
+}
+
 - (void)build {
-    const CGFloat W = 420, H = 450;
+    const CGFloat W = 420, H = 480;
     NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
                      | NSWindowStyleMaskNonactivatingPanel | NSWindowStyleMaskHUDWindow;
     NSPanel *p = [[NSPanel alloc] initWithContentRect:NSMakeRect(40, 80, W, H)
@@ -217,14 +228,24 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     self.renderHeightField.placeholderString = @"Height";
     self.renderWidthField.accessibilityLabel = @"DXMT render width";
     self.renderHeightField.accessibilityLabel = @"DXMT render height";
+    self.renderWidthField.delegate = self;
+    self.renderHeightField.delegate = self;
     [v addSubview:self.renderWidthField]; [v addSubview:self.renderHeightField];
-    NSButton *applyResolution = [NSButton buttonWithTitle:@"Apply" target:self action:@selector(applyRenderResolution:)];
+    NSButton *applyResolution = [NSButton buttonWithTitle:@"Apply custom" target:self action:@selector(applyRenderResolution:)];
     applyResolution.bezelStyle = NSBezelStyleRounded;
-    applyResolution.frame = NSMakeRect(252, y - 1, 80, 26);
+    applyResolution.frame = NSMakeRect(252, y - 1, 156, 26);
     [v addSubview:applyResolution];
-    self.renderHint = label(@"Applies when the game next queries DLSS/NGX settings.", 12, y - 24, W - 24, NO);
+    self.renderPreset = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(12, y - 31, W - 24, 25) pullsDown:NO];
+    [self.renderPreset addItemsWithTitles:@[@"Choose a render scale…", @"Follow game (0 × 0)",
+                                              @"Half output (50%)", @"40% output", @"One-third output (33%)"]];
+    self.renderPreset.target = self;
+    self.renderPreset.action = @selector(renderPresetChanged:);
+    self.renderPreset.toolTip = @"Quick choices based on the game's current output resolution.";
+    self.renderPreset.accessibilityLabel = @"DXMT render scale preset";
+    [v addSubview:self.renderPreset];
+    self.renderHint = label(@"Custom sizes or a preset apply when the game next queries DLSS/NGX.", 12, y - 55, W - 24, NO);
     self.renderHint.font = [NSFont systemFontOfSize:10]; self.renderHint.textColor = NSColor.lightGrayColor;
-    [v addSubview:self.renderHint]; y -= 58;
+    [v addSubview:self.renderHint]; y -= 88;
 
     self.captureButton = [NSButton buttonWithTitle:@"Record diagnostics"
         target:self action:@selector(requestCapture:)];
@@ -257,11 +278,22 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
 }
 
 - (void)applyRenderResolution:(id)sender {
-    const int width = self.renderWidthField.intValue, height = self.renderHeightField.intValue;
-    if (width < 0 || height < 0 || ((width == 0) != (height == 0)) || width > 8192 || height > 8192) {
-        self.renderHint.stringValue = @"Use 0 × 0, or two sizes from 1 to 8192.";
+    int width = 0, height = 0;
+    if (!dimension_value(self.renderWidthField, width) || !dimension_value(self.renderHeightField, height)
+        || ((width == 0) != (height == 0))) {
+        self.renderHint.stringValue = @"Enter two whole-pixel sizes, or 0 × 0 to follow the game.";
         self.renderHint.textColor = NSColor.systemRedColor;
         return;
+    }
+    Status current = read_status();
+    if (width && current.uw && current.uh) {
+        const int minWidth = (current.uw + 2) / 3, minHeight = (current.uh + 2) / 3;
+        if (width < minWidth || width > (int)current.uw || height < minHeight || height > (int)current.uh) {
+            self.renderHint.stringValue = [NSString stringWithFormat:@"Allowed size: %d–%u × %d–%u pixels.",
+                minWidth, current.uw, minHeight, current.uh];
+            self.renderHint.textColor = NSColor.systemRedColor;
+            return;
+        }
     }
     float sharp; bool rcas; int profile, oldWidth, oldHeight;
     read_settings(sharp, rcas, profile, oldWidth, oldHeight);
@@ -272,6 +304,32 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     }
     self.renderHint.stringValue = width ? @"Saved. Reopen the game's DLSS setting to apply." : @"Saved. Game-selected resolution will be used.";
     self.renderHint.textColor = NSColor.lightGrayColor;
+}
+
+- (void)controlTextDidChange:(NSNotification *)notification {
+    [self.renderPreset selectItemAtIndex:0];
+}
+
+- (void)renderPresetChanged:(id)sender {
+    const NSInteger choice = self.renderPreset.indexOfSelectedItem;
+    if (choice == 0) return;
+    int width = 0, height = 0;
+    if (choice > 1) {
+        Status st = read_status();
+        if (!st.uw || !st.uh) {
+            self.renderHint.stringValue = @"Run the game with FSR once so the panel can read its output size.";
+            self.renderHint.textColor = NSColor.systemOrangeColor;
+            [self.renderPreset selectItemAtIndex:0];
+            return;
+        }
+        const int numerator = choice == 2 ? 1 : choice == 3 ? 2 : 1;
+        const int denominator = choice == 2 ? 2 : choice == 3 ? 5 : 3;
+        width = (int)(((long long)st.uw * numerator + denominator - 1) / denominator);
+        height = (int)(((long long)st.uh * numerator + denominator - 1) / denominator);
+    }
+    self.renderWidthField.stringValue = [NSString stringWithFormat:@"%d", width];
+    self.renderHeightField.stringValue = [NSString stringWithFormat:@"%d", height];
+    [self applyRenderResolution:nil];
 }
 
 - (void)requestCapture:(id)sender {

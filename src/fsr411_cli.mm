@@ -389,6 +389,10 @@ int fsr411_main(int argc, char **argv) {
             if(std::strcmp(opt,"0") && std::strcmp(opt,"1")) fail("FSR4_OPTIMIZE must be 0 or 1");
             options.optimize=opt[0]=='1';
         }
+        if(const char *reuse=std::getenv("FSR4_LITE_REUSE"); reuse && *reuse) {
+            if(std::strcmp(reuse,"0") && std::strcmp(reuse,"1")) fail("FSR4_LITE_REUSE must be 0 or 1");
+            options.liteReuse=reuse[0]=='1';
+        }
         std::string root = default_root(), buildDir = "build";
         std::vector<std::string> positional;
         int bench = 0; bool dumpState = false, info = false, profileStages = false;

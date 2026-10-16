@@ -269,9 +269,10 @@ def build(args) -> dict:
     stages += [{"name": "ae", "index": -1, "source": "ae_tiles.hlsl"},
                {"name": "ae_finalize", "index": -1, "source": "ae_finalize.hlsl"},
                {"name": "rcas", "index": 27, "source": "rcas.hlsl"}]
-    # Ultra Performance never reuses inference. Keep optimize=0 as the
-    # original shared PRE for numerical and timing comparisons.
-    separate_reuse_pre = args.profile == "lossy" and args.optimize and not args.ultra_performance
+    # Lite can reuse inference for the Ultra Performance model as well. The
+    # specialized PRE keeps the temporal cache valid without running the
+    # neural input/recurrent path on reused frames.
+    separate_reuse_pre = args.profile == "lossy" and args.optimize
     if separate_reuse_pre:
         (hlsl / "pre_reuse.hlsl").write_text(reuse_only_pre((hlsl / stages[0]["source"]).read_text()))
         stages.append({"name": "pre_reuse", "index": -1, "source": "pre_reuse.hlsl"})

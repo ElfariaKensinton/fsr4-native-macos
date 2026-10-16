@@ -70,7 +70,7 @@ struct Options {
     Backend backend = Backend::Auto;
     Profile profile = Profile::Lossy;
     int tier = 0, colorspace = 0, optimize = 1;
-    bool rcas = false, allowCompile = true, ultraPerformance = false;
+    bool rcas = false, allowCompile = true, ultraPerformance = false, liteReuse = true;
     // Tests only: Exact Fast/Lossy PRE/POST with ordered arithmetic, so their
     // optimized graph can be compared bit for bit with the imported HLSL.
     bool strictMath = false;
@@ -344,8 +344,17 @@ public:
         // The supplied vectors describe one frame of motion. Never apply
         // them directly to a cache older than one frame (unusual jitter can
         // have consecutive negatives). Refresh after every reused frame.
-        const bool skip = lossy && view.cacheValid && !view.skippedInference && !p.reset && p.jitter[0]<0.f
-            && uint64_t(p.rw)*2u>=p.alignedUW && !options.ultraPerformance;
+        // Lite's temporal cache is one frame old, regardless of the scale
+        // ratio: motion vectors still describe exactly the cached frame. Keep
+        // the reuse cadence available to the Ultra Performance model too;
+        // previously that path silently disabled Lite at the 3x scale most
+        // likely to be selected for performance-focused games.
+        // Permit the 1–2 px rounding shortfall common in 3x DLSS presets
+        // (e.g. 853x533 -> 2560x1600).
+        const bool reuseScaleSupported = uint64_t(p.rw)*3u+2u>=p.alignedUW
+            && uint64_t(p.rh)*3u+2u>=p.alignedUH;
+        const bool skip = lossy && options.liteReuse && view.cacheValid && !view.skippedInference && !p.reset && p.jitter[0]<0.f
+            && reuseScaleSupported;
         TensorSizes sizes = tensor_sizes(p.alignedUW, p.alignedUH);
         fill_constants(*slot, *session, p, sizes, rcas, options.sharpness);
         const LossyConstants lc={skip?1u:0u,p.alignedUW/4u,p.alignedUH/4u,0};

@@ -9,7 +9,7 @@ Works as a standalone tool and inside games via CrossOver (DLSS → FSR 4).
 
 ## Requirements
 
-- Mac with Apple Silicon (fastest on M5; M1–M4 use the `simd` half-matrix backend, not benchmarked on those chips yet, see [hardware](docs/HARDWARE.md))
+- Mac with Apple Silicon (fastest on M5; M1–M4 use the `simd` half-matrix backend; an M1 Pro 1600p Lite benchmark is linked below, see [hardware](docs/HARDWARE.md))
 - macOS 26+, Xcode 26+ with Metal Toolchain, Python 3
 - For games: CrossOver 24+ and Rosetta 2
 

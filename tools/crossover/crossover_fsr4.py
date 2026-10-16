@@ -341,10 +341,11 @@ def copy_framework(hook: Path, source: Path) -> Path:
     return binary
 
 
-def conf_set(conf: Path, values: dict):
+def conf_set(conf: Path, values: dict, remove=()):
     text = conf.read_text()
     lines = text.splitlines()
     seen = set()
+    remove = set(remove)
     out = []
     for raw in lines:
         hit = None
@@ -352,6 +353,8 @@ def conf_set(conf: Path, values: dict):
             if raw.strip().startswith(f'"{key}"'):
                 hit = key
                 break
+        if not hit and any(raw.strip().startswith(f'"{key}"') for key in remove):
+            continue
         if hit:
             out.append(f'"{hit}" = "{values[hit]}"')
             seen.add(hit)
@@ -369,7 +372,10 @@ def conf_set(conf: Path, values: dict):
         shutil.copy2(conf, bak)
         print(f"backup {bak}")
     conf.write_text("\n".join(out) + ("\n" if text.endswith("\n") else ""))
-    print(f"set {', '.join(values)} in {conf}")
+    detail = f"set {', '.join(values)}"
+    if remove:
+        detail += f"; removed {', '.join(sorted(remove))}"
+    print(f"{detail} in {conf}")
 
 
 def print_shell_values(values: dict):
@@ -549,6 +555,26 @@ def cmd_install_dxmt(args):
     log = DIST / "hook.log"
     log.write_text("")
     hook = build_hook(log)
+    validation_env = os.environ.copy()
+    validation_env["FSR4_HOOK_LOG"] = str(log)
+    validation_env["FSR4_ROOT"] = str(ROOT)
+    validation_env["FSR4_REPLACE"] = "0"
+    validation_env["FSR4_VERSION"] = args.fsr_version
+    if args.fsr_version == "4.1.1":
+        validation_env["FSR4_PROFILE"] = args.profile
+    smoke = build_smoke()
+    run(["arch", "-x86_64", str(smoke)], env=validation_env)
+    smoke_log = log.read_text()
+    if "swizzled" not in smoke_log or "encodeToCommandBuffer:" not in smoke_log:
+        raise SystemExit(f"DXMT FSR hook smoke test did not swizzle MetalFX encode:\n{smoke_log}")
+    live = build_live()
+    validation_env["FSR4_REPLACE"] = "1"
+    validation_env["FSR4_SHARPNESS"] = "0"
+    validation_env["FSR4_SETTINGS"] = "none"
+    reference = build_reference(validation_env)
+    run(["arch", "-x86_64", str(live),
+         str(ROOT / "testcases" / "testcase_quality_720to1080"), str(reference)], env=validation_env)
+    print("DXMT hook smoke and live replacement checks passed.")
     build_panel_app()
     if args.fsr_version == "4.1.1":
         save_panel_profile(args.profile)
@@ -567,7 +593,9 @@ def cmd_install_dxmt(args):
     if args.render_width:
         values[DXMT_RENDER_WIDTH_KEY] = str(args.render_width)
         values[DXMT_RENDER_HEIGHT_KEY] = str(args.render_height)
-    conf_set(bottle, values)
+    # If this bottle was previously configured for our D3DMetal route,
+    # leaving its framework override in place can bypass DXMT entirely.
+    conf_set(bottle, values, remove=(KEY,))
     print("DXMT hook and panel configured. DXMT_ENABLE_NVEXT=1 enables its NGX/DLSS path; restart the bottle.")
     print(f'restore: python3 {Path(__file__)} restore --bottle "{bottle.parent.name}"')
     print("Shell environment values:")
