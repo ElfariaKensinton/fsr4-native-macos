@@ -87,9 +87,12 @@ python3 tools/crossover/crossover_fsr4.py install-dxmt --bottle "Game"
 ```
 
 The DXMT patch loads `libfsr4hook.dylib` immediately before it creates a
-temporal scaler. The install command builds the hook and adds its path and
+temporal scaler. `install-dxmt` builds the hook and panel, sets
+`DXMT_ENABLE_NVEXT=1` (needed for DXMT's NGX/DLSS path), and adds the hook and
 FSR settings to the selected bottle. It does not replace DXMT files. Restart
-the bottle after installing DXMT and configuring the hook. To restore, use the
+the bottle after installing DXMT and configuring the hook. The environment
+values printed by the command are the ones for DXMT. `D3DMETAL_FRAMEWORK_PATH`
+is for D3DMetal and does not load the hook into DXMT. To restore, use the
 normal `restore` command.
 
 With a game that queries DXMT's NGX optimal-settings callback, force an exact
@@ -101,13 +104,15 @@ python3 tools/crossover/crossover_fsr4.py install-dxmt --bottle "Game" \
 ```
 
 These dimensions are returned by DXMT before the game allocates its render
-targets, so color, depth and motion vectors stay aligned. Width and height
-must be supplied together, and each must be between one third of the requested
-output size and that output size. The game must use DXMT's optimal-settings
-callback and honor its returned size; titles that choose their own render
-dimensions can ignore the override. Lower render sizes reduce game shading
-work and increase the FSR scale ratio, so image quality can change. The FSR
-4.1 Lite network, weights and temporal reuse cadence remain unchanged.
+targets, so color, depth and motion vectors stay aligned. The FSR4 Panel also
+has editable render width and height fields; set both to `0` to follow the
+game's preset. After applying a value, reopen the game's DLSS setting so it
+queries the callback again. Width and height must be supplied together, and
+each must be between one third of the requested output size and that output
+size. Titles that choose render dimensions themselves can ignore the override.
+Reducing render size can improve GPU-limited frame rate, with a corresponding
+image-detail trade-off; CPU-limited games may see little change. The FSR 4.1
+Lite network, weights and temporal reuse cadence remain unchanged.
 
 The integration patch is pinned to DXMT commit `50102f9`; apply it to a clean
 checkout of that revision. DXMT's upstream project and build guidance:
