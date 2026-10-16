@@ -1,23 +1,22 @@
 # DXMT integration
 
-FSR 4.1.1 Lite selects the exact `simdgroup` INT8 backend on M1–M4. On an M1
-Pro, an interleaved 8-round run at 1712×1112 output measured median full neural
-frames at 11.94 ms with two simdgroups per Winograd tile versus 12.56 ms with
-four (about 4.9% faster). A more aggressive one-simdgroup schedule was slower.
-All eight output frames were byte-identical between the two- and four-group
-schedules. The neural network, rounding, and temporal reuse cadence are
-unchanged. This is a modest kernel-level gain, not a large end-to-end uplift;
-the custom render-size option can reduce game shading work further, with the
-usual image-quality trade-off at lower input resolutions.
+The previous M1 Pro kernel schedule change did not improve the reported in-game
+FPS. It was a small isolated neural-kernel improvement, not the large gameplay
+gain requested. The meaningful performance lever exposed here is the game's
+DLSS render size: reducing it cuts the number of pixels the game shades before
+FSR 4.1 Lite upscales to the requested output. Lower input sizes trade image
+detail for speed; there is no honest universal FPS promise because games differ
+in their GPU and CPU bottlenecks.
 
 DXMT creates a MetalFX temporal scaler for its DLSS/NGX path. The integration
 patch in [patches/dxmt/fsr4-dxmt-integration.patch](../patches/dxmt/fsr4-dxmt-integration.patch)
-adds two small opt-in hooks to DXMT:
+adds two hooks to DXMT:
 
 - Load the FSR hook from `FSR4_DXMT_HOOK` before creating the first temporal
   scaler.
-- Let `FSR4_DXMT_RENDER_WIDTH` and `FSR4_DXMT_RENDER_HEIGHT` override the
-  dimensions returned by the NGX optimal-settings callback.
+- Let the panel override the dimensions returned by the NGX optimal-settings
+  callback. Install-time `FSR4_DXMT_RENDER_WIDTH` and
+  `FSR4_DXMT_RENDER_HEIGHT` are defaults until the panel saves a size.
 
 Apply the patch to a clean checkout of DXMT commit `50102f9`, then build and
 install DXMT as usual:
@@ -35,31 +34,39 @@ python3 tools/crossover/crossover_fsr4.py install-dxmt --bottle "Game" \
   --profile lossy
 ```
 
-The installer builds `dist/crossover/libfsr4hook.dylib` and writes its path to
-the bottle's `cxbottle.conf`. It does not copy or replace DXMT files. The hook
-is currently built for x86_64, matching the CrossOver/Rosetta setup used by
-the existing D3DMetal integration.
+The installer builds `dist/crossover/libfsr4hook.dylib` and the native
+`dist/crossover/FSR4 Panel.app`, writes the hook path to the bottle, enables
+`DXMT_ENABLE_NVEXT=1`, and configures the panel. DXMT requires that NVEXT
+setting for its NGX/DLSS implementation. The installer does not copy or replace
+DXMT files. The hook is built for x86_64, matching the CrossOver/Rosetta setup
+used by the existing D3DMetal integration.
 
-To force a custom internal resolution, pass both dimensions:
+The environment values printed by `install-dxmt` are the DXMT-specific bottle
+configuration. `D3DMETAL_FRAMEWORK_PATH` is for the D3DMetal route and does not
+load the hook into DXMT. Use the printed `FSR4_DXMT_HOOK`,
+`DXMT_ENABLE_NVEXT`, `FSR4_ROOT`, and related values with a DXMT build that
+includes the integration patch.
+
+To choose an install-time default render size, pass both dimensions:
 
 ```sh
 python3 tools/crossover/crossover_fsr4.py install-dxmt --bottle "Game" \
   --render-width 1280 --render-height 720 --profile lossy
 ```
 
-DXMT returns these dimensions to titles that call and honor its NGX
-optimal-settings callback. The values are required to be between one third of
-the requested output size and the output size, matching the supported DLSS
-scale interval. Invalid overrides are ignored by the DXMT patch. Games that
-choose render dimensions independently can ignore them. Restart the bottle
-after changing the configuration.
+The FSR4 Panel also includes editable width and height fields. Set both to `0`
+to use the game's selected preset. After applying, reopen the game's DLSS
+setting so it requests dimensions again; some titles require restarting the
+game. DXMT only returns these dimensions to titles that call and honor its NGX
+optimal-settings callback. Each dimension must be between one third of the
+requested output size and the output size. Invalid overrides are ignored.
+Titles that choose render dimensions independently can ignore the override.
 
 Reducing the internal render size can cut the game's pixel shading work by a
-large amount, but image quality depends on the title, motion vectors, and
-chosen scale. The FSR 4.1 Lite model, network weights, and temporal reuse
-cadence are not changed by the override. Use the game's quality setting or
-omit the override when preserving the highest input detail is more important
-than GPU load.
+large amount, while image quality depends on the title, motion vectors, and
+chosen scale. The FSR 4.1 Lite network, weights, and temporal reuse cadence are
+unchanged by the override. Start with a moderate scale reduction and compare
+image quality in motion before lowering it further.
 
 Restore the bottle configuration with:
 
@@ -69,5 +76,5 @@ python3 tools/crossover/crossover_fsr4.py restore --bottle "Game"
 
 The patch targets upstream DXMT commit
 [50102f9](https://github.com/3Shain/dxmt/tree/50102f9). It has not been
-compiled or runtime-validated here. DXMT build instructions and current
+compiled or runtime-validated in-game here. DXMT build instructions and current
 installation details are maintained by [3Shain/dxmt](https://github.com/3Shain/dxmt).
