@@ -336,11 +336,25 @@ static void settings_refresh_locked() {
 
 static void settings_write_file_locked() {
     if (g_set.path.empty()) return;
+    // Keep DXMT's render-size controls when the game's profile hotkey writes
+    // the shared settings file.
+    int renderWidth = 0, renderHeight = 0;
+    FILE *old = fopen(g_set.path.c_str(), "r");
+    if (old) {
+        char line[128];
+        while (fgets(line, sizeof line, old)) {
+            int value;
+            if (sscanf(line, "render_width=%d", &value) == 1) renderWidth = value;
+            else if (sscanf(line, "render_height=%d", &value) == 1) renderHeight = value;
+        }
+        fclose(old);
+    }
     const std::string temporary = g_set.path + ".tmp." + std::to_string(getpid());
     FILE *f = fopen(temporary.c_str(), "w");
     if (!f) { flog("cannot write panel settings"); return; }
-    bool ok = fprintf(f, "sharpness=%.3f\nrcas=%d\nprofile=%s\n", g_set.sharpness,
-                      g_set.rcas ? 1 : 0, profile_label(g_set.profile)) > 0;
+    bool ok = fprintf(f, "sharpness=%.3f\nrcas=%d\nprofile=%s\nrender_width=%d\nrender_height=%d\n",
+                      g_set.sharpness, g_set.rcas ? 1 : 0, profile_label(g_set.profile),
+                      renderWidth, renderHeight) > 0;
     if (fclose(f) != 0) ok = false;
     if (!ok || rename(temporary.c_str(), g_set.path.c_str()) != 0) {
         unlink(temporary.c_str()); flog("cannot save panel settings"); return;
