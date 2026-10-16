@@ -54,10 +54,11 @@ METALFX_KEY = "D3DM_ENABLE_METALFX"
 DXMT_HOOK_KEY = "FSR4_DXMT_HOOK"
 DXMT_RENDER_WIDTH_KEY = "FSR4_DXMT_RENDER_WIDTH"
 DXMT_RENDER_HEIGHT_KEY = "FSR4_DXMT_RENDER_HEIGHT"
+DXMT_NVEXT_KEY = "DXMT_ENABLE_NVEXT"
 # "fsr4": the FSR 4.0.2 model under a 4.1.1 install (FSR4_PROFILE only, not in the panel).
 PROFILES = ("exact", "exact-fast", "lossy", "fsr4")
 OURS = (KEY, LOG_KEY, ROOT_KEY, REPLACE_KEY, PANEL_KEY, VERSION_KEY, PROFILE_KEY,
-        DXMT_HOOK_KEY, DXMT_RENDER_WIDTH_KEY, DXMT_RENDER_HEIGHT_KEY)
+        DXMT_HOOK_KEY, DXMT_RENDER_WIDTH_KEY, DXMT_RENDER_HEIGHT_KEY, DXMT_NVEXT_KEY)
 
 
 def run(cmd, **kw):
@@ -376,6 +377,17 @@ def print_shell_values(values: dict):
         print(f"{key}={shlex.quote(str(value))}")
 
 
+def save_panel_render_size(width: int, height: int):
+    """Persist DXMT render dimensions for the panel and patched NGX callback."""
+    path = DIST / "panel.conf"
+    lines = path.read_text().splitlines() if path.is_file() else []
+    lines = [line for line in lines if not line.startswith(("render_width=", "render_height="))]
+    lines.extend((f"render_width={width}", f"render_height={height}"))
+    temporary = path.with_suffix(".conf.tmp")
+    temporary.write_text("\n".join(lines) + "\n")
+    os.replace(temporary, path)
+
+
 def conf_unset(conf: Path):
     if not conf.exists():
         print(f"no bottle config {conf}")
@@ -524,11 +536,15 @@ def cmd_install_dxmt(args):
     log = DIST / "hook.log"
     log.write_text("")
     hook = build_hook(log)
+    build_panel_app()
+    save_panel_render_size(args.render_width, args.render_height)
     values = {
         DXMT_HOOK_KEY: str(hook),
+        DXMT_NVEXT_KEY: "1",
         LOG_KEY: str(log),
         ROOT_KEY: str(ROOT),
         REPLACE_KEY: "1",
+        PANEL_KEY: "1",
         VERSION_KEY: args.fsr_version,
     }
     if args.fsr_version == "4.1.1":
@@ -537,7 +553,7 @@ def cmd_install_dxmt(args):
         values[DXMT_RENDER_WIDTH_KEY] = str(args.render_width)
         values[DXMT_RENDER_HEIGHT_KEY] = str(args.render_height)
     conf_set(bottle, values)
-    print("DXMT hook configured. Build DXMT with patches/dxmt/fsr4-dxmt-integration.patch, then restart the bottle.")
+    print("DXMT hook and panel configured. DXMT_ENABLE_NVEXT=1 enables its NGX/DLSS path; restart the bottle.")
     print(f'restore: python3 {Path(__file__)} restore --bottle "{bottle.parent.name}"')
     print("Shell environment values:")
     print_shell_values(values)
