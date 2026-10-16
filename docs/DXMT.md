@@ -37,7 +37,9 @@ python3 tools/crossover/crossover_fsr4.py install-dxmt --bottle "Game" \
 The installer builds `dist/crossover/libfsr4hook.dylib` and the native
 `dist/crossover/FSR4 Panel.app`, writes the hook path to the bottle, enables
 `DXMT_ENABLE_NVEXT=1`, and configures the panel. DXMT requires that NVEXT
-setting for its NGX/DLSS implementation. The installer does not copy or replace
+setting for its NGX/DLSS implementation. The selected profile is written to
+`panel.conf`, replacing a stale panel choice that could otherwise override the
+install-time profile. The installer does not copy or replace
 DXMT files. The hook is built for x86_64, matching the CrossOver/Rosetta setup
 used by the existing D3DMetal integration.
 
