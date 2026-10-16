@@ -94,6 +94,7 @@ Build the installer app and DMG: `make installer INSTALLER_VERSION=v1.7`
 | Topic | Link |
 | --- | --- |
 | Performance and validation | [docs/FSR411_PERFORMANCE.md](docs/FSR411_PERFORMANCE.md) |
+| M1 Pro 1600p profile benchmark | [docs/reports/fsr411-m1pro-1600-2026-10-16.md](docs/reports/fsr411-m1pro-1600-2026-10-16.md) |
 | Lite image quality update | [docs/FSR411_QUALITY_UPDATE.md](docs/FSR411_QUALITY_UPDATE.md) |
 | Memory optimization and timing limits | [docs/FSR411_MEMORY_OPTIMIZATION.md](docs/FSR411_MEMORY_OPTIMIZATION.md) |
 | Benchmark method | [BENCHMARK.md](BENCHMARK.md) |
