@@ -501,13 +501,14 @@ def cmd_install(args):
         # restore leaves it, as it may have been set before the install.
         values[METALFX_KEY] = "1"
         conf_set(bottle, values)
-        print("Shell environment values:")
-        print_shell_values(values)
     print("original CrossOver.app was not modified")
     restore = f"python3 {Path(__file__)} restore"
     if bottle:
         restore += f' --bottle "{bottle.parent.name}"'
     print(f"restore: {restore}")
+    if bottle:
+        print("Shell environment values:")
+        print_shell_values(values)
 
 
 def cmd_install_dxmt(args):
@@ -536,10 +537,10 @@ def cmd_install_dxmt(args):
         values[DXMT_RENDER_WIDTH_KEY] = str(args.render_width)
         values[DXMT_RENDER_HEIGHT_KEY] = str(args.render_height)
     conf_set(bottle, values)
-    print("Shell environment values:")
-    print_shell_values(values)
     print("DXMT hook configured. Build DXMT with patches/dxmt/fsr4-dxmt-integration.patch, then restart the bottle.")
     print(f'restore: python3 {Path(__file__)} restore --bottle "{bottle.parent.name}"')
+    print("Shell environment values:")
+    print_shell_values(values)
 
 
 def cmd_restore(args):
