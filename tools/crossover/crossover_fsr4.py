@@ -388,6 +388,17 @@ def save_panel_render_size(width: int, height: int):
     os.replace(temporary, path)
 
 
+def save_panel_profile(profile: str):
+    """Make the requested install profile win over stale panel preferences."""
+    path = DIST / "panel.conf"
+    lines = path.read_text().splitlines() if path.is_file() else []
+    lines = [line for line in lines if not line.startswith("profile=")]
+    lines.append(f"profile={profile}")
+    temporary = path.with_suffix(".conf.tmp")
+    temporary.write_text("\n".join(lines) + "\n")
+    os.replace(temporary, path)
+
+
 def conf_unset(conf: Path):
     if not conf.exists():
         print(f"no bottle config {conf}")
@@ -470,6 +481,8 @@ def cmd_install(args):
     log.write_text("")
     hook = build_hook(log)
     binary = copy_framework(hook, framework)
+    if args.fsr_version == "4.1.1":
+        save_panel_profile(args.profile)
     env = os.environ.copy()
     env["FSR4_HOOK_LOG"] = str(log)
     env["FSR4_ROOT"] = str(ROOT)
@@ -537,6 +550,8 @@ def cmd_install_dxmt(args):
     log.write_text("")
     hook = build_hook(log)
     build_panel_app()
+    if args.fsr_version == "4.1.1":
+        save_panel_profile(args.profile)
     save_panel_render_size(args.render_width, args.render_height)
     values = {
         DXMT_HOOK_KEY: str(hook),
