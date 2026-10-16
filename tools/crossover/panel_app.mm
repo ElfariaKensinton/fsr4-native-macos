@@ -84,22 +84,27 @@ static Status read_status() {
     return s;
 }
 
-static void read_settings(float &sharp, bool &rcas, int &profile, int fallbackProfile = -1) {
+static void read_settings(float &sharp, bool &rcas, int &profile, int &renderWidth, int &renderHeight,
+                          int fallbackProfile = -1) {
     sharp = 0.4f; rcas = true; profile = fallbackProfile >= 0 ? fallbackProfile : 1;
+    renderWidth = renderHeight = 0;
     if (const char *value = getenv("FSR4_PROFILE")) profile = profile_from_name(value, profile);
     auto kv = read_kv(dist_path("panel.conf"));
     if (kv.count("sharpness")) sharp = (float)atof(kv["sharpness"].c_str());
     if (kv.count("rcas")) rcas = atoi(kv["rcas"].c_str()) != 0;
+    if (kv.count("render_width")) renderWidth = atoi(kv["render_width"].c_str());
+    if (kv.count("render_height")) renderHeight = atoi(kv["render_height"].c_str());
     profile = profile_from_name(kv["profile"], profile);
     if (!std::isfinite(sharp)) sharp = .4f;
     if (sharp < 0) sharp = 0; if (sharp > 1) sharp = 1;
 }
 
-static bool write_settings(float sharp, bool rcas, int profile) {
+static bool write_settings(float sharp, bool rcas, int profile, int renderWidth, int renderHeight) {
     const std::string p = dist_path("panel.conf"), tmp = p + ".tmp." + std::to_string(getpid());
     FILE *f = fopen(tmp.c_str(), "w");
     if (!f) return false;
-    bool ok = fprintf(f, "sharpness=%.3f\nrcas=%d\nprofile=%s\n", sharp, rcas ? 1 : 0, profile_label(profile)) > 0;
+    bool ok = fprintf(f, "sharpness=%.3f\nrcas=%d\nprofile=%s\nrender_width=%d\nrender_height=%d\n",
+                      sharp, rcas ? 1 : 0, profile_label(profile), renderWidth, renderHeight) > 0;
     if (fclose(f) != 0) ok = false;
     if (!ok || rename(tmp.c_str(), p.c_str()) != 0) { unlink(tmp.c_str()); return false; }
     return true;
@@ -129,6 +134,7 @@ static bool write_capture_request(NSString **reason) {
 @property(nonatomic, strong) NSButton *rcas;
 @property(nonatomic, strong) NSSegmentedControl *profile;
 @property(nonatomic, strong) NSTextField *profileHint;
+@property(nonatomic, strong) NSTextField *renderWidthField, *renderHeightField, *renderHint;
 @property(nonatomic, strong) NSString *settingsError;
 @property(nonatomic, strong) NSButton *captureButton;
 @property(nonatomic, strong) NSTextField *captureMessage;
@@ -149,7 +155,7 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
 }
 
 - (void)build {
-    const CGFloat W = 420, H = 320;
+    const CGFloat W = 420, H = 450;
     NSUInteger style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
                      | NSWindowStyleMaskNonactivatingPanel | NSWindowStyleMaskHUDWindow;
     NSPanel *p = [[NSPanel alloc] initWithContentRect:NSMakeRect(40, 80, W, H)
@@ -167,13 +173,13 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     NSView *v = p.contentView;
 
     CGFloat y = H - 26;
-    [v addSubview:label(@"FSR 4 replacing DLSS (CrossOver)", 12, y, W - 24, YES)]; y -= 22;
+    [v addSubview:label(@"FSR 4 replacing DLSS / NGX", 12, y, W - 24, YES)]; y -= 22;
     self.status = label(@"", 12, y, W - 24, NO); [v addSubview:self.status]; y -= 20;
     self.res = label(@"", 12, y, W - 24, NO); [v addSubview:self.res]; y -= 20;
     self.frame = label(@"", 12, y, W - 24, NO); [v addSubview:self.frame]; y -= 30;
 
-    float sharp; bool rc; int profile;
-    read_settings(sharp, rc, profile);
+    float sharp; bool rc; int profile, renderWidth, renderHeight;
+    read_settings(sharp, rc, profile, renderWidth, renderHeight);
     [v addSubview:label(@"Mode", 12, y, 50, NO)];
     self.profile = [NSSegmentedControl segmentedControlWithLabels:@[@"FSR 4.1", @"FSR 4.1 Lite"]
         trackingMode:NSSegmentSwitchTrackingSelectOne target:self action:@selector(changed:)];
@@ -202,6 +208,24 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     self.profileHint.textColor = NSColor.lightGrayColor;
     [v addSubview:self.profileHint]; y -= 34;
 
+    [v addSubview:label(@"DXMT render resolution (0 × 0 follows game)", 12, y, W - 24, NO)]; y -= 28;
+    self.renderWidthField = [NSTextField textFieldWithString:renderWidth ? [NSString stringWithFormat:@"%d", renderWidth] : @"0"];
+    self.renderHeightField = [NSTextField textFieldWithString:renderHeight ? [NSString stringWithFormat:@"%d", renderHeight] : @"0"];
+    self.renderWidthField.frame = NSMakeRect(12, y, 110, 24);
+    self.renderHeightField.frame = NSMakeRect(130, y, 110, 24);
+    self.renderWidthField.placeholderString = @"Width";
+    self.renderHeightField.placeholderString = @"Height";
+    self.renderWidthField.accessibilityLabel = @"DXMT render width";
+    self.renderHeightField.accessibilityLabel = @"DXMT render height";
+    [v addSubview:self.renderWidthField]; [v addSubview:self.renderHeightField];
+    NSButton *applyResolution = [NSButton buttonWithTitle:@"Apply" target:self action:@selector(applyRenderResolution:)];
+    applyResolution.bezelStyle = NSBezelStyleRounded;
+    applyResolution.frame = NSMakeRect(252, y - 1, 80, 26);
+    [v addSubview:applyResolution];
+    self.renderHint = label(@"Applies when the game next queries DLSS/NGX settings.", 12, y - 24, W - 24, NO);
+    self.renderHint.font = [NSFont systemFontOfSize:10]; self.renderHint.textColor = NSColor.lightGrayColor;
+    [v addSubview:self.renderHint]; y -= 58;
+
     self.captureButton = [NSButton buttonWithTitle:@"Record diagnostics"
         target:self action:@selector(requestCapture:)];
     self.captureButton.bezelStyle = NSBezelStyleRounded;
@@ -224,10 +248,30 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
 }
 
 - (void)changed:(id)sender {
+    float sharp; bool rcas; int profile, width, height;
+    read_settings(sharp, rcas, profile, width, height);
     const bool saved = write_settings((float)self.slider.doubleValue, self.rcas.state == NSControlStateValueOn,
-                                     segment_profile(self.profile.selectedSegment));
+                                     segment_profile(self.profile.selectedSegment), width, height);
     self.settingsError = saved ? nil : @"Could not save panel settings.";
     [self refresh];
+}
+
+- (void)applyRenderResolution:(id)sender {
+    const int width = self.renderWidthField.intValue, height = self.renderHeightField.intValue;
+    if (width < 0 || height < 0 || ((width == 0) != (height == 0)) || width > 8192 || height > 8192) {
+        self.renderHint.stringValue = @"Use 0 × 0, or two sizes from 1 to 8192.";
+        self.renderHint.textColor = NSColor.systemRedColor;
+        return;
+    }
+    float sharp; bool rcas; int profile, oldWidth, oldHeight;
+    read_settings(sharp, rcas, profile, oldWidth, oldHeight);
+    if (!write_settings(sharp, rcas, profile, width, height)) {
+        self.renderHint.stringValue = @"Could not save render size.";
+        self.renderHint.textColor = NSColor.systemRedColor;
+        return;
+    }
+    self.renderHint.stringValue = width ? @"Saved. Reopen the game's DLSS setting to apply." : @"Saved. Game-selected resolution will be used.";
+    self.renderHint.textColor = NSColor.lightGrayColor;
 }
 
 - (void)requestCapture:(id)sender {
@@ -293,7 +337,12 @@ static NSTextField *label(NSString *s, CGFloat x, CGFloat y, CGFloat w, BOOL bol
     else
         self.frame.stringValue = @"Game frame: —";
     float s; bool rc; int profile;
-    read_settings(s, rc, profile, st.ok && age <= 3.0 ? st.profile : -1);
+    int renderWidth, renderHeight;
+    read_settings(s, rc, profile, renderWidth, renderHeight, st.ok && age <= 3.0 ? st.profile : -1);
+    if (!self.renderWidthField.currentEditor)
+        self.renderWidthField.stringValue = renderWidth ? [NSString stringWithFormat:@"%d", renderWidth] : @"0";
+    if (!self.renderHeightField.currentEditor)
+        self.renderHeightField.stringValue = renderHeight ? [NSString stringWithFormat:@"%d", renderHeight] : @"0";
     self.profile.selectedSegment = segment_for_profile(profile);
     // FSR4_VERSION=4.0.2 in the bottle pins the old model; the modes then do nothing.
     const bool pinned = st.ok && st.active && age <= 3.0 && st.version != "4.1.1" && profile != 3;
