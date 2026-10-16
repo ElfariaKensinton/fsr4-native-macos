@@ -9,6 +9,7 @@ only that key from the bottle config.
 import argparse
 import json
 import os
+import shlex
 import shutil
 import struct
 import subprocess
@@ -193,4 +194,396 @@ def patch_macho(path: Path):
         cmd, csz = struct.unpack_from("<II", data, off)
         if cmd == 0x19:
             nsects = struct.unpack_from("<I", data, off + 64)[0]
-    
+            so = off + 72
+            for _s in range(nsects):
+                sect = data[so:so + 16].split(b"\0", 1)[0]
+                foff = struct.unpack_from("<I", data, so + 48)[0]
+                if sect == b"__text":
+                    text_off = foff
+                so += 80
+        off += csz
+    if text_off is None:
+        raise SystemExit("no __text")
+    if cmds_end + cmdsize > text_off:
+        raise SystemExit(f"no header pad: need {cmdsize}, have {text_off - cmds_end}")
+    if any(data[cmds_end:cmds_end + cmdsize]):
+        raise SystemExit("header pad is not zero")
+    struct.pack_into("<IIIIII", data, cmds_end, LC_LOAD_DYLIB, cmdsize, 24, 0, 0x10000, 0x10000)
+    data[cmds_end + 24:cmds_end + 24 + len(name)] = name
+    struct.pack_into("<II", data, 16, ncmds + 1, sizeofcmds + cmdsize)
+    path.write_bytes(data)
+    print(f"added LC_LOAD_DYLIB {LOAD_PATH.decode()} cmdsize={cmdsize}")
+
+
+def is_crossover(app: Path) -> bool:
+    """A CrossOver.app under any name (copies get renamed, e.g. CrossOver_patched)."""
+    return app.suffix == ".app" and (app / CROSSOVER_MARKER).is_dir()
+
+
+def spotlight_crossovers() -> list:
+    """CrossOver copies outside the Applications folders (other disks), by bundle id."""
+    try:
+        out = subprocess.run(["/usr/bin/mdfind", f"kMDItemCFBundleIdentifier == '{CROSSOVER_BUNDLE_ID}'"],
+                             capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    return [Path(line) for line in out.splitlines() if line.endswith(".app")]
+
+
+def crossover_apps(folders=APP_FOLDERS, spotlight=True) -> list:
+    """Installed CrossOver copies: CrossOver.app / CrossOver Preview.app in
+    /Applications, then ~/Applications, then any renamed copy in those folders
+    or one subfolder down, then Spotlight hits. Same order as the installer app."""
+    found = []
+
+    def add(app: Path):
+        if app not in found and is_crossover(app):
+            found.append(app)
+
+    for folder in folders:
+        for name in STANDARD_NAMES:
+            add(folder / name)
+    for folder in folders:
+        try:
+            entries = sorted(folder.iterdir(), key=lambda p: p.name.lower())
+        except OSError:
+            continue
+        for entry in entries:
+            if entry.suffix == ".app":
+                add(entry)
+            elif entry.is_dir() and not entry.name.startswith("."):
+                try:
+                    for sub in sorted(entry.glob("*.app"), key=lambda p: p.name.lower()):
+                        add(sub)
+                except OSError:
+                    pass
+    if spotlight:
+        for app in spotlight_crossovers():
+            add(app)
+    return found
+
+
+def framework_in(app: Path):
+    for relative in FRAMEWORKS_IN_APP:
+        if (app / relative).is_dir():
+            return app / relative
+    return None
+
+
+def find_framework(app: str = "") -> Path:
+    """D3DMetal.framework of --crossover, else the first installed CrossOver that has one."""
+    apps = [Path(app).expanduser()] if app else crossover_apps()
+    for candidate in apps:
+        framework = framework_in(candidate)
+        if framework:
+            return framework
+    if app:
+        raise SystemExit(f"no D3DMetal.framework in {apps[0]}; pass --crossover with CrossOver.app 24+")
+    where = ", ".join(map(str, apps)) if apps else "/Applications or ~/Applications"
+    raise SystemExit(f"D3DMetal.framework not found in {where}; install CrossOver 24+ "
+                     "or pass --crossover /path/to/CrossOver.app")
+
+
+def bottle_names() -> list:
+    return sorted(p.parent.name for p in BOTTLES.glob("*/cxbottle.conf"))
+
+
+def has_install(conf: Path) -> bool:
+    text = conf.read_text(errors="replace")
+    return MARKER in text or f'"{KEY}"' in text
+
+
+def default_bottle(for_restore: bool = False) -> Path:
+    """The bottle to use when --bottle is omitted: the only bottle, or (for
+    restore) the only bottle that carries our keys. Never guesses between
+    several."""
+    confs = sorted(BOTTLES.glob("*/cxbottle.conf"))
+    if for_restore:
+        installed = [c for c in confs if has_install(c)]
+        if len(installed) == 1:
+            return installed[0]
+        if not installed:
+            raise SystemExit(f"no bottle in {BOTTLES} has fsr4-mac keys; nothing to restore")
+        confs = installed
+    if len(confs) == 1:
+        return confs[0]
+    if not confs:
+        raise SystemExit(f"no CrossOver bottles in {BOTTLES}\n"
+                         "pass --bottle /path/to/cxbottle.conf, or --no-bottle to only build and test")
+    raise SystemExit("several bottles found: " + ", ".join(c.parent.name for c in confs)
+                     + '\npick one with --bottle <name>, e.g. --bottle "' + confs[0].parent.name + '"')
+
+
+def resolve_bottle(value: str) -> Path:
+    """A bottle name or a path to the bottle directory or its cxbottle.conf."""
+    path = Path(value).expanduser()
+    if path.name != "cxbottle.conf":
+        path = (path if path.is_dir() else BOTTLES / value) / "cxbottle.conf"
+    if not path.is_file():
+        names = bottle_names()
+        raise SystemExit(f"bottle config not found: {path}\navailable bottles: "
+                         + (", ".join(names) if names else f"none in {BOTTLES}")
+                         + "\nuse --bottle <name>, or --no-bottle to only build and test")
+    return path
+
+
+def copy_framework(hook: Path, source: Path) -> Path:
+    dest = DIST / "D3DMetal.framework"
+    if dest.exists():
+        shutil.rmtree(dest)
+    shutil.copytree(source, dest, symlinks=True)
+    binary = dest / "Versions" / "A" / "D3DMetal"
+    patch_macho(binary)
+    shutil.copy2(hook, dest / "Versions" / "A" / "libfsr4hook.dylib")
+    run(["codesign", "-f", "-s", "-", str(binary)])
+    run(["codesign", "-f", "-s", "-", str(dest / "Versions" / "A" / "libfsr4hook.dylib")])
+    return binary
+
+
+def conf_set(conf: Path, values: dict):
+    text = conf.read_text()
+    lines = text.splitlines()
+    seen = set()
+    out = []
+    for raw in lines:
+        hit = None
+        for key in values:
+            if raw.strip().startswith(f'"{key}"'):
+                hit = key
+                break
+        if hit:
+            out.append(f'"{hit}" = "{values[hit]}"')
+            seen.add(hit)
+        else:
+            out.append(raw)
+    missing = [k for k in values if k not in seen]
+    if missing:
+        if MARKER not in out:
+            out.append(MARKER)
+        for key in missing:
+            out.append(f'"{key}" = "{values[key]}"')
+    bak = DIST / "backups" / (conf.parent.name + ".cxbottle.conf")
+    bak.parent.mkdir(parents=True, exist_ok=True)
+    if not bak.exists():
+        shutil.copy2(conf, bak)
+        print(f"backup {bak}")
+    conf.write_text("\n".join(out) + ("\n" if text.endswith("\n") else ""))
+    print(f"set {', '.join(values)} in {conf}")
+
+
+def print_shell_values(values: dict):
+    for key, value in values.items():
+        print(f"{key}={shlex.quote(str(value))}")
+
+
+def conf_unset(conf: Path):
+    if not conf.exists():
+        print(f"no bottle config {conf}")
+        return
+    lines = conf.read_text().splitlines()
+    out = []
+    for raw in lines:
+        s = raw.strip()
+        if s == MARKER or any(s.startswith(f'"{key}"') for key in OURS):
+            continue
+        out.append(raw)
+    conf.write_text("\n".join(out) + "\n")
+    print(f"removed {', '.join(OURS)} from {conf}")
+
+
+def build_reference(env):
+    # Rebuild the same model and backend as the live bridge. An older model's
+    # saved frame cannot validate a 4.1.1 installation.
+    version = env.get(VERSION_KEY, "4.1.1")
+    if version not in ("4.0.2", "4.1.1"):
+        raise SystemExit("FSR4_VERSION must be 4.0.2 or 4.1.1")
+    if env.get(PROFILE_KEY) == "fsr4":
+        version = "4.0.2"  # the live bridge routes this profile to the old model
+    model = env.get("FSR4_MODEL", "auto")
+    if version == "4.1.1":
+        aliases = {"auto": "auto", "reference": "reference", "int8": "reference", "scalar": "scalar",
+                   "simd": "simd", "fp16": "simd", "f16": "simd", "native": "i8mpp", "i8mpp": "i8mpp"}
+        if model not in aliases:
+            raise SystemExit("FSR 4.1.1 requires FSR4_MODEL=auto, reference, scalar, simd, or i8mpp")
+        model = aliases[model]
+        version_options = ["--fsr-version", version]
+        profile = env.get(PROFILE_KEY, "lossy")
+        if profile not in PROFILES:
+            raise SystemExit("FSR4_PROFILE must be exact, exact-fast, lossy or fsr4")
+    else:
+        if model == "int8":
+            model = "i8mpp"  # historic 4.0.2 live alias
+        if model not in ("auto", "f16", "fp16", "i8mpp"):
+            model = "auto"
+        version_options = ["--fsr-version", version]
+    run(["make", "-B", "tools/bin/fsr4mac"], cwd=ROOT)
+    info = json.loads(subprocess.check_output(
+        [str(ROOT / "tools/bin/fsr4mac"), *version_options, "--backend-info", model], text=True, env=env))
+    backend = info["backend"]
+    print(f"{info['device']}: {backend} ({info['reason']})")
+    testcase = ROOT / "testcases" / "testcase_quality_720to1080"
+    if not (testcase / "meta.json").exists():
+        run(["make", "tools/bin/gen_testcase"], cwd=ROOT)
+        run([str(ROOT / "tools/bin/gen_testcase"), str(testcase),
+             "quality", "1280", "720", "1920", "1080", "2"])
+    if version == "4.1.1":
+        refdir = DIST / ("reference-4.1.1-" + profile + "-" + model)
+        run([str(ROOT / "tools/bin/fsr4mac"), str(testcase), str(refdir),
+             *version_options, "--profile", profile, "--" + model], cwd=ROOT, env=env)
+        report = json.loads((refdir / "run.json").read_text())
+        if (report.get("fsr_version") != version or report.get("profile") != profile
+                or report.get("backend") not in ("int8-mpp", "int8-simd", "int8-reference", "int8-scalar")):
+            raise SystemExit("reference did not run the requested FSR 4.1.1 model/profile")
+        print(f"reference verified: FSR {version} {profile} {report['backend']}")
+    else:
+        refdir = DIST / ("reference-" + backend)
+        run([str(ROOT / "tools/bin/fsr4mac"), str(testcase), str(refdir),
+             *version_options, "--fp16" if backend == "f16" else "--i8mpp"], cwd=ROOT, env=env)
+    return refdir / "f00_out.bin"
+
+
+def cmd_install(args):
+    if (args.profile == "fsr4" or args.fsr_version == "4.0.2") and not FSR402_WEIGHTS.is_file():
+        raise SystemExit("this copy has no FSR 4.0.2 weights (FSR 4.1-only release); "
+                         "use --profile exact-fast or lossy")
+    if args.no_bottle:
+        bottle = None
+    else:
+        bottle = resolve_bottle(args.bottle) if args.bottle else default_bottle()
+        print(f"bottle: {bottle}")
+    framework = find_framework(args.crossover)
+    print(f"D3DMetal: {framework}")
+    log = DIST / "hook.log"
+    DIST.mkdir(parents=True, exist_ok=True)
+    log.write_text("")
+    hook = build_hook(log)
+    binary = copy_framework(hook, framework)
+    env = os.environ.copy()
+    env["FSR4_HOOK_LOG"] = str(log)
+    env["FSR4_ROOT"] = str(ROOT)
+    env["FSR4_REPLACE"] = "0"
+    env[VERSION_KEY] = args.fsr_version
+    if args.fsr_version == "4.1.1":
+        env[PROFILE_KEY] = args.profile
+    smoke = build_smoke()
+    run(["arch", "-x86_64", str(smoke)], env=env)
+    text = log.read_text()
+    if "swizzled" not in text or "encodeToCommandBuffer:" not in text:
+        raise SystemExit(f"smoke did not swizzle encode:\n{text}")
+    dl = build_dlopen()
+    log.write_text("")
+    run(["arch", "-x86_64", str(dl), str(binary)], env=env)
+    loaded = log.read_text()
+    if "loaded pid=" not in loaded:
+        raise SystemExit(f"copied D3DMetal did not load the hook:\n{loaded}")
+    live = build_live()
+    env["FSR4_REPLACE"] = "1"
+    env["FSR4_SHARPNESS"] = "0"   # the CLI reference frame has no RCAS
+    env["FSR4_SETTINGS"] = "none"  # ignore the panel's saved sharpness
+    ref = build_reference(env)
+    run(["arch", "-x86_64", str(live),
+         str(ROOT / "testcases" / "testcase_quality_720to1080"), str(ref)], env=env)
+    print(loaded.strip())
+    build_panel_app()
+    if bottle:
+        values = {
+            KEY: str(binary),
+            LOG_KEY: str(DIST / "hook.log"),
+            ROOT_KEY: str(ROOT),
+            REPLACE_KEY: "1",
+            VERSION_KEY: args.fsr_version,
+        }
+        if args.fsr_version == "4.1.1":
+            values[PROFILE_KEY] = args.profile
+        if args.panel:
+            values[PANEL_KEY] = "1"   # status/sharpness panel in the game process
+        # DLSS reaches MetalFX only with this D3DMetal switch. Not in OURS:
+        # restore leaves it, as it may have been set before the install.
+        values[METALFX_KEY] = "1"
+        conf_set(bottle, values)
+        print("Shell environment values:")
+        print_shell_values(values)
+    print("original CrossOver.app was not modified")
+    restore = f"python3 {Path(__file__)} restore"
+    if bottle:
+        restore += f' --bottle "{bottle.parent.name}"'
+    print(f"restore: {restore}")
+
+
+def cmd_install_dxmt(args):
+    if bool(args.render_width) != bool(args.render_height):
+        raise SystemExit("--render-width and --render-height must be set together")
+    if args.render_width < 0 or args.render_height < 0:
+        raise SystemExit("render dimensions must be positive")
+    if (args.profile == "fsr4" or args.fsr_version == "4.0.2") and not FSR402_WEIGHTS.is_file():
+        raise SystemExit("this copy has no FSR 4.0.2 weights (FSR 4.1-only release); use --profile exact-fast or lossy")
+    bottle = resolve_bottle(args.bottle) if args.bottle else default_bottle()
+    print(f"bottle: {bottle}")
+    DIST.mkdir(parents=True, exist_ok=True)
+    log = DIST / "hook.log"
+    log.write_text("")
+    hook = build_hook(log)
+    values = {
+        DXMT_HOOK_KEY: str(hook),
+        LOG_KEY: str(log),
+        ROOT_KEY: str(ROOT),
+        REPLACE_KEY: "1",
+        VERSION_KEY: args.fsr_version,
+    }
+    if args.fsr_version == "4.1.1":
+        values[PROFILE_KEY] = args.profile
+    if args.render_width:
+        values[DXMT_RENDER_WIDTH_KEY] = str(args.render_width)
+        values[DXMT_RENDER_HEIGHT_KEY] = str(args.render_height)
+    conf_set(bottle, values)
+    print("Shell environment values:")
+    print_shell_values(values)
+    print("DXMT hook configured. Build DXMT with patches/dxmt/fsr4-dxmt-integration.patch, then restart the bottle.")
+    print(f'restore: python3 {Path(__file__)} restore --bottle "{bottle.parent.name}"')
+
+
+def cmd_restore(args):
+    conf_unset(resolve_bottle(args.bottle) if args.bottle else default_bottle(for_restore=True))
+    print("CrossOver.app was not modified; next launch uses the bundled D3DMetal")
+
+
+def main():
+    p = argparse.ArgumentParser()
+    sub = p.add_subparsers(dest="cmd", required=True)
+    i = sub.add_parser("install")
+    i.add_argument("--bottle", default="",
+                   help="bottle name (e.g. Steam) or path to the bottle / its cxbottle.conf "
+                        "(default: the only bottle; required when there are several)")
+    i.add_argument("--no-bottle", action="store_true")
+    i.add_argument("--crossover", default="",
+                   help="CrossOver.app to copy D3DMetal from, any name or folder "
+                        "(default: first CrossOver found in /Applications or ~/Applications)")
+    i.add_argument("--fsr-version", choices=("4.0.2", "4.1.1"), default="4.1.1",
+                   help="FSR model version for the live bridge and installation test (default: 4.1.1)")
+    i.add_argument("--profile", choices=PROFILES, default="lossy",
+                   help="initial panel mode: FSR 4.1.1 exact/exact-fast/lossy, or fsr4 for the "
+                        "FSR 4.0.2 model (default: lossy)")
+    i.add_argument("--panel", action="store_true",
+                   help="also set FSR4_PANEL=1 in the bottle (status/sharpness panel)")
+    i.set_defaults(func=cmd_install)
+    d = sub.add_parser("install-dxmt")
+    d.add_argument("--bottle", default="",
+                   help="bottle name or cxbottle.conf path (default: the only bottle)")
+    d.add_argument("--fsr-version", choices=("4.0.2", "4.1.1"), default="4.1.1")
+    d.add_argument("--profile", choices=PROFILES, default="lossy")
+    d.add_argument("--render-width", type=int, default=0,
+                   help="force the DLSS/NGX render width returned by DXMT (requires DXMT patch)")
+    d.add_argument("--render-height", type=int, default=0,
+                   help="force the DLSS/NGX render height returned by DXMT (requires DXMT patch)")
+    d.set_defaults(func=cmd_install_dxmt)
+    r = sub.add_parser("restore")
+    r.add_argument("--bottle", default="",
+                   help="bottle name or path, as given to install "
+                        "(default: the only bottle with fsr4-mac keys)")
+    r.set_defaults(func=cmd_restore)
+    args = p.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
