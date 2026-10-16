@@ -75,6 +75,9 @@ The panel can be reopened with `open "dist/crossover/FSR4 Panel.app"`.
 
 Without the panel: drop `--panel`, and pick the mode with `--profile
 exact-fast` (FSR 4.1) or `--profile lossy` (FSR 4.1 Lite, default).
+The selected install profile is also written to `dist/crossover/panel.conf`,
+so an old panel preference cannot silently override `--profile lossy` on the
+next game launch. The panel can still switch profiles afterward.
 
 ## Update or remove
 
